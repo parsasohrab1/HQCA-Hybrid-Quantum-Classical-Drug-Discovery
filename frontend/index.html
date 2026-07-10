@@ -3,73 +3,156 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HQCA — Drug Binding Dashboard</title>
+  <title>HQCA Dashboard</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <header>
-    <h1>HQCA Dashboard</h1>
-    <p>سامانه شبیه‌ساز کوآنتوم-کلاسیک — داده‌های آماده نمایش</p>
+  <!-- نوار فوقانی -->
+  <header class="topbar">
+    <div class="topbar-right">
+      <button id="sidebar-toggle" class="icon-btn" aria-label="منو">☰</button>
+      <div class="brand">
+        <span class="brand-logo">⚛</span>
+        <div>
+          <strong>HQCA</strong>
+          <small>Quantum Drug Discovery</small>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-center">
+      <input type="search" id="global-search" placeholder="جستجو در SMILES یا task..." />
+    </div>
+    <div class="topbar-left">
+      <div id="connection-status" class="connection connecting">در حال اتصال...</div>
+      <button id="notif-bell" class="icon-btn notif-bell" title="اعلان‌ها">
+        🔔 <span id="notif-count" class="badge hidden">0</span>
+      </button>
+      <span id="auth-status" class="user-badge">—</span>
+    </div>
   </header>
 
-  <main>
-    <section class="card stats-grid" id="stats-section">
-      <div class="stat-box"><span id="stat-predictions">—</span><label>پیش‌بینی‌ها</label></div>
-      <div class="stat-box"><span id="stat-datasets">—</span><label>دیتاست‌ها</label></div>
-      <div class="stat-box"><span id="stat-avg-score">—</span><label>میانگین نمره</label></div>
-    </section>
+  <div class="layout">
+    <!-- سایدبار -->
+    <aside class="sidebar" id="sidebar">
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-page="overview">📊 داشبورد</button>
+        <button class="nav-item" data-page="results">🧬 نتایج و ۳D</button>
+        <button class="nav-item" data-page="predict">🔬 پیش‌بینی جدید</button>
+        <button class="nav-item" data-page="synthetic">🧪 تولید داده</button>
+        <button class="nav-item" data-page="notifications">🔔 اعلان‌ها</button>
+        <button class="nav-item" data-page="settings">⚙️ تنظیمات</button>
+      </nav>
+      <div class="sidebar-footer">
+        <input id="username" type="hidden" value="admin" />
+        <input id="password" type="hidden" value="admin12345" />
+        <button id="login-btn" class="nav-item subtle">↻ اتصال مجدد</button>
+      </div>
+    </aside>
 
-    <section class="card" id="auth-section">
-      <h2>ورود</h2>
-      <input id="username" placeholder="نام کاربری" value="admin" />
-      <input id="password" type="password" placeholder="رمز عبور" value="admin12345" />
-      <button id="login-btn">ورود</button>
-      <span id="auth-status"></span>
-    </section>
+    <!-- محتوای اصلی -->
+    <main class="content">
 
-    <section class="card">
-      <h2>نتایج ذخیره‌شده (FR-17 / FR-18 / FR-19)</h2>
-      <div id="result-summary">در حال بارگذاری...</div>
-      <div id="score-chart" class="chart"></div>
-      <iframe id="viewer-frame" title="3D pocket viewer"></iframe>
-      <div id="download-links"></div>
-      <table id="history-table">
-        <thead>
-          <tr><th>SMILES</th><th>نمره</th><th>اطمینان</th><th>تاریخ</th></tr>
-        </thead>
-        <tbody id="history-body"></tbody>
-      </table>
-    </section>
+      <!-- صفحه: داشبورد -->
+      <section class="page active" id="page-overview">
+        <h1 class="page-title">داشبورد</h1>
+        <div class="stats-grid">
+          <div class="stat-box"><span id="stat-predictions">—</span><label>پیش‌بینی‌ها</label></div>
+          <div class="stat-box"><span id="stat-datasets">—</span><label>دیتاست‌ها</label></div>
+          <div class="stat-box"><span id="stat-avg-score">—</span><label>میانگین نمره</label></div>
+          <div class="stat-box"><span id="stat-notifications">—</span><label>اعلان‌ها</label></div>
+        </div>
+        <div class="card">
+          <h2>نمودار نمرات اتصال</h2>
+          <div id="score-chart" class="chart"></div>
+        </div>
+        <div class="card">
+          <h2>آخرین پیش‌بینی</h2>
+          <div id="overview-latest">در حال بارگذاری...</div>
+        </div>
+      </section>
 
-    <section class="card">
-      <h2>دیتاست سنتتیک آماده</h2>
-      <div id="dataset-panel">در حال بارگذاری...</div>
-    </section>
+      <!-- صفحه: نتایج -->
+      <section class="page" id="page-results">
+        <h1 class="page-title">نتایج ذخیره‌شده</h1>
+        <div class="card">
+          <div id="result-summary">در حال بارگذاری...</div>
+          <iframe id="viewer-frame" title="3D pocket viewer"></iframe>
+          <div id="download-links" class="link-row"></div>
+        </div>
+        <div class="card">
+          <h2>تاریخچه</h2>
+          <table id="history-table">
+            <thead>
+              <tr><th>SMILES</th><th>نمره</th><th>اطمینان</th><th>تاریخ</th></tr>
+            </thead>
+            <tbody id="history-body"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2>دیتاست سنتتیک</h2>
+          <div id="dataset-panel">در حال بارگذاری...</div>
+        </div>
+      </section>
 
-    <section class="card">
-      <h2>پیش‌بینی جدید</h2>
-      <label>SMILES</label>
-      <input id="smiles" value="CCO" maxlength="200" />
-      <label>FASTA</label>
-      <textarea id="fasta" rows="3">>target
+      <!-- صفحه: پیش‌بینی -->
+      <section class="page" id="page-predict">
+        <h1 class="page-title">پیش‌بینی اتصال</h1>
+        <div class="card">
+          <label>SMILES</label>
+          <input id="smiles" value="CCO" maxlength="200" />
+          <label>FASTA</label>
+          <textarea id="fasta" rows="4">>target
 ACDEFGHIKLMNPQRSTVWY</textarea>
-      <label>Backend</label>
-      <select id="backend">
-        <option value="auto">auto</option>
-        <option value="pennylane_default_qubit">pennylane_default_qubit</option>
-        <option value="classical_fallback">classical_fallback</option>
-      </select>
-      <button id="predict-btn">شبیه‌سازی</button>
-    </section>
+          <label>Backend</label>
+          <select id="backend">
+            <option value="auto">auto</option>
+            <option value="pennylane_default_qubit">pennylane_default_qubit</option>
+            <option value="classical_fallback">classical_fallback</option>
+          </select>
+          <button id="predict-btn">شبیه‌سازی</button>
+        </div>
+      </section>
 
-    <section class="card">
-      <h2>تولید داده سنتتیک (FR-06)</h2>
-      <input id="num-samples" type="number" min="1" max="5000" value="100" />
-      <input id="seed-smiles" value="CCO,CC(C)O" />
-      <button id="generate-btn">شروع تولید</button>
-      <pre id="task-status"></pre>
-    </section>
-  </main>
+      <!-- صفحه: تولید داده -->
+      <section class="page" id="page-synthetic">
+        <h1 class="page-title">تولید داده سنتتیک</h1>
+        <div class="card">
+          <label>تعداد نمونه (1–5000)</label>
+          <input id="num-samples" type="number" min="1" max="5000" value="100" />
+          <label>SMILES seed</label>
+          <input id="seed-smiles" value="CCO,CC(C)O" />
+          <button id="generate-btn">شروع تولید</button>
+          <pre id="task-status"></pre>
+        </div>
+      </section>
+
+      <!-- صفحه: اعلان‌ها (همه در یک صفحه) -->
+      <section class="page" id="page-notifications">
+        <h1 class="page-title">اعلان‌ها</h1>
+        <div class="notif-toolbar">
+          <span id="notif-summary">—</span>
+          <button id="notif-refresh" class="btn-secondary">بروزرسانی</button>
+          <button id="notif-mark-read" class="btn-secondary">علامت‌گذاری همه خوانده‌شده</button>
+        </div>
+        <div id="notifications-list" class="notifications-list">
+          <p class="empty-msg">در حال بارگذاری اعلان‌ها...</p>
+        </div>
+      </section>
+
+      <!-- صفحه: تنظیمات -->
+      <section class="page" id="page-settings">
+        <h1 class="page-title">تنظیمات</h1>
+        <div class="card">
+          <label>نام کاربری</label>
+          <input id="username-visible" value="admin" />
+          <label>رمز عبور</label>
+          <input id="password-visible" type="password" value="admin12345" />
+          <button id="save-auth-btn">ذخیره و ورود</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
   <script src="/app.js"></script>
 </body>
 </html>

@@ -465,6 +465,53 @@ def dashboard_datasets(
     ]
 
 
+@app.get("/notifications")
+def list_notifications(
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_role("researcher", "admin")),
+):
+    """All system notifications on one feed."""
+    pred_query = db.query(PredictionResult)
+    task_query = db.query(ProcessingTask)
+    if user["role"] != "admin":
+        pred_query = pred_query.filter(PredictionResult.user_id == user["uid"])
+        task_query = task_query.filter(ProcessingTask.user_id == user["uid"])
+
+    notifications = []
+    for p in pred_query.order_by(PredictionResult.created_at.desc()).limit(30).all():
+        notifications.append({
+            "id": f"pred-{p.request_id}",
+            "type": "prediction",
+            "title": f"پیش‌بینی اتصال: نمره {p.binding_score}",
+            "message": f"SMILES: {decrypt_sensitive(p.encrypted_smiles)[:40]} — اطمینان {p.confidence}%",
+            "created_at": p.created_at,
+            "read": False,
+            "link": f"/predictions/{p.request_id}",
+            "meta": {"request_id": p.request_id, "binding_score": p.binding_score},
+        })
+    for t in task_query.order_by(ProcessingTask.updated_at.desc()).limit(20).all():
+        status_fa = {
+            "completed": "تکمیل شد",
+            "failed": "خطا",
+            "running": "در حال اجرا",
+            "pending": "در صف",
+        }.get(t.status, t.status)
+        notifications.append({
+            "id": f"task-{t.task_id}",
+            "type": "error" if t.status == "failed" else "dataset",
+            "title": f"تولید داده: {status_fa}",
+            "message": f"{t.records_generated}/{t.num_samples} نمونه — task {t.task_id[:12]}",
+            "created_at": t.updated_at,
+            "read": t.status in ("completed", "failed"),
+            "link": f"/status/{t.task_id}",
+            "meta": {"task_id": t.task_id, "status": t.status},
+        })
+
+    notifications.sort(key=lambda x: x["created_at"], reverse=True)
+    unread = sum(1 for n in notifications if not n["read"])
+    return {"total": len(notifications), "unread": unread, "items": notifications}
+
+
 @app.get("/admin/logs")
 def admin_logs(user: dict = Depends(require_role("admin"))):
     return {"message": "Structured JSON logs are emitted to stdout (NFR-08)."}
