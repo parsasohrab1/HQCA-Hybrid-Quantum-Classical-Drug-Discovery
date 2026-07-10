@@ -20,6 +20,14 @@ from database import PredictionResult, ProcessingTask, Project, User, get_db, in
 from logging_config import LOGGER
 from queueing import enqueue_synthetic_job
 from reporting import generate_pdf_report
+from screening import screening_from_csv_url
+from molecular_catalog import (
+    dashboard_molecular_data,
+    encrypt_protein_sequence,
+    pair_from_prediction,
+    protein_from_row,
+    refresh_molecular_catalog,
+)
 from security import (
     create_access_token,
     decrypt_sensitive,
@@ -30,6 +38,14 @@ from security import (
     verify_password,
 )
 from seed_data import seed_demo_data
+from showcase import (
+    SHOWCASE_DRUG,
+    build_showcase_from_row,
+    build_showcase_payload,
+    enrich_showcase_payload,
+    load_showcase_cache,
+    run_showcase_pipeline,
+)
 from storage import object_storage
 from validation import normalize_fasta, validate_smiles
 
@@ -113,6 +129,9 @@ class PredictRequest(BaseModel):
 class PredictResponse(BaseModel):
     request_id: str
     created_at: str
+    smiles: str
+    fasta: str
+    protein_sequence: str
     binding_score: float
     binding_energy_kcal_mol: float
     confidence: float
@@ -257,6 +276,7 @@ def predict(
         project_id=body.project_id,
         encrypted_smiles=encrypt_sensitive(body.smiles),
         encrypted_fasta=encrypt_sensitive(body.fasta),
+        encrypted_protein_sequence=encrypt_protein_sequence(result.protein_sequence),
         binding_score=result.binding_score,
         binding_energy_kcal_mol=result.binding_energy_kcal_mol,
         confidence=result.confidence_pct,
@@ -269,10 +289,14 @@ def predict(
     )
     db.add(record)
     db.commit()
+    refresh_molecular_catalog(db)
 
     return PredictResponse(
         request_id=request_id,
         created_at=utc_now(),
+        smiles=body.smiles,
+        fasta=body.fasta,
+        protein_sequence=result.protein_sequence,
         binding_score=result.binding_score,
         binding_energy_kcal_mol=result.binding_energy_kcal_mol,
         confidence=result.confidence_pct,
@@ -323,6 +347,27 @@ def task_status(task_id: str, db: Session = Depends(get_db)):
     )
 
 
+@app.get("/demo/showcase")
+def demo_showcase(
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_role("researcher", "admin")),
+):
+    """Full end-to-end pipeline for sample drug (Ibuprofen)."""
+    row = db.get(PredictionResult, SHOWCASE_DRUG["id"])
+    cached = load_showcase_cache()
+    if row is not None:
+        if cached and cached.get("request_id") == SHOWCASE_DRUG["id"]:
+            cached["result"].update({
+                "viewer_html_url": row.viewer_html_object,
+                "report_pdf_url": row.report_pdf_object,
+                "report_csv_url": row.report_csv_object,
+                "pocket_pdb_url": row.pocket_pdb_object,
+            })
+            return enrich_showcase_payload(cached)
+        return enrich_showcase_payload(build_showcase_from_row(row, decrypt_sensitive))
+    return enrich_showcase_payload(run_showcase_pipeline(str(DEFAULT_OUTPUT_DIR / SHOWCASE_DRUG["id"])))
+
+
 @app.get("/predictions/history")
 def prediction_history(
     db: Session = Depends(get_db),
@@ -334,13 +379,12 @@ def prediction_history(
     rows = query.order_by(PredictionResult.created_at.desc()).limit(50).all()
     return [
         {
+            **pair_from_prediction(r),
             "request_id": r.request_id,
-            "created_at": r.created_at,
-            "binding_score": r.binding_score,
             "binding_energy_kcal_mol": r.binding_energy_kcal_mol,
-            "confidence": r.confidence,
             "backend": r.backend,
             "smiles_preview": decrypt_sensitive(r.encrypted_smiles)[:24],
+            "protein_preview": protein_from_row(r)[:32],
             "viewer_html_url": r.viewer_html_object,
             "report_pdf_url": r.report_pdf_object,
             "report_csv_url": r.report_csv_object,
@@ -362,11 +406,14 @@ def prediction_detail(
     if user["role"] != "admin" and row.user_id != user["uid"]:
         raise HTTPException(status_code=403, detail="Access denied")
     center = json.loads(row.pocket_center_json)
+    mol = pair_from_prediction(row)
     return {
         "request_id": row.request_id,
         "created_at": row.created_at,
-        "smiles": decrypt_sensitive(row.encrypted_smiles),
-        "fasta": decrypt_sensitive(row.encrypted_fasta),
+        "smiles": mol["smiles"],
+        "fasta": mol["fasta"],
+        "protein_sequence": mol["protein_sequence"],
+        "protein_length": mol["protein_length"],
         "binding_score": row.binding_score,
         "binding_energy_kcal_mol": row.binding_energy_kcal_mol,
         "confidence": row.confidence,
@@ -393,6 +440,10 @@ def dashboard_summary(
     predictions = pred_query.order_by(PredictionResult.created_at.desc()).limit(10).all()
     tasks = task_query.order_by(ProcessingTask.updated_at.desc()).limit(5).all()
     latest = predictions[0] if predictions else None
+    latest_task = tasks[0] if tasks else None
+    screening_csv = latest_task.output_csv_object if latest_task else None
+    screening = screening_from_csv_url(screening_csv)
+    molecular_data = dashboard_molecular_data(db, latest)
 
     return {
         "stats": {
@@ -401,15 +452,15 @@ def dashboard_summary(
             "avg_binding_score": round(
                 sum(p.binding_score for p in predictions) / max(len(predictions), 1), 2
             ),
+            "screening_hits": screening["summary"]["hits"],
+            "screening_total": screening["summary"]["total_screened"],
         },
         "latest_prediction": None
         if latest is None
         else {
+            **pair_from_prediction(latest),
             "request_id": latest.request_id,
-            "created_at": latest.created_at,
-            "binding_score": latest.binding_score,
             "binding_energy_kcal_mol": latest.binding_energy_kcal_mol,
-            "confidence": latest.confidence,
             "backend": latest.backend,
             "smiles_preview": decrypt_sensitive(latest.encrypted_smiles)[:40],
             "viewer_html_url": latest.viewer_html_object,
@@ -419,11 +470,10 @@ def dashboard_summary(
         },
         "predictions": [
             {
+                **pair_from_prediction(p),
                 "request_id": p.request_id,
-                "created_at": p.created_at,
-                "binding_score": p.binding_score,
-                "confidence": p.confidence,
                 "smiles_preview": decrypt_sensitive(p.encrypted_smiles)[:24],
+                "protein_preview": protein_from_row(p)[:32],
                 "viewer_html_url": p.viewer_html_object,
             }
             for p in predictions
@@ -440,7 +490,41 @@ def dashboard_summary(
             }
             for t in tasks
         ],
+        "molecular_screening": screening,
+        "molecular_data": molecular_data,
     }
+
+
+@app.get("/dashboard/molecules")
+def dashboard_molecules(
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_role("researcher", "admin")),
+):
+    """Stored SMILES and protein sequences for dashboard."""
+    pred_query = db.query(PredictionResult)
+    if user["role"] != "admin":
+        pred_query = pred_query.filter(PredictionResult.user_id == user["uid"])
+    latest = pred_query.order_by(PredictionResult.created_at.desc()).first()
+    return dashboard_molecular_data(db, latest)
+
+
+@app.get("/dashboard/screening")
+def dashboard_screening(
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_role("researcher", "admin")),
+    top_n: int = 20,
+):
+    """Virtual molecular screening results from latest completed dataset."""
+    query = db.query(ProcessingTask).filter(ProcessingTask.status == "completed")
+    if user["role"] != "admin":
+        query = query.filter(ProcessingTask.user_id == user["uid"])
+    task = query.order_by(ProcessingTask.updated_at.desc()).first()
+    csv_url = task.output_csv_object if task else None
+    result = screening_from_csv_url(csv_url, top_n=top_n)
+    if task:
+        result["task_id"] = task.task_id
+        result["updated_at"] = task.updated_at
+    return result
 
 
 @app.get("/dashboard/datasets")

@@ -35,6 +35,7 @@
     <!-- سایدبار -->
     <aside class="sidebar" id="sidebar">
       <nav class="sidebar-nav">
+        <button class="nav-item" data-page="showcase">💊 نمونه دارو</button>
         <button class="nav-item active" data-page="overview">📊 داشبورد</button>
         <button class="nav-item" data-page="results">🧬 نتایج و ۳D</button>
         <button class="nav-item" data-page="predict">🔬 پیش‌بینی جدید</button>
@@ -57,9 +58,80 @@
         <h1 class="page-title">داشبورد</h1>
         <div class="stats-grid">
           <div class="stat-box"><span id="stat-predictions">—</span><label>پیش‌بینی‌ها</label></div>
-          <div class="stat-box"><span id="stat-datasets">—</span><label>دیتاست‌ها</label></div>
+          <div class="stat-box"><span id="stat-screened">—</span><label>غربال‌شده</label></div>
+          <div class="stat-box"><span id="stat-hits">—</span><label>کاندید برتر</label></div>
           <div class="stat-box"><span id="stat-avg-score">—</span><label>میانگین نمره</label></div>
           <div class="stat-box"><span id="stat-notifications">—</span><label>اعلان‌ها</label></div>
+        </div>
+        <div class="card" id="molecular-data-card">
+          <div class="molecular-header">
+            <h2>رشته مولکول دارو و توالی پروتئین</h2>
+            <span id="molecular-stored-count" class="screening-badge">—</span>
+          </div>
+          <p id="molecular-primary-label" class="molecular-label">—</p>
+          <div class="sequence-grid">
+            <div class="sequence-block">
+              <label>SMILES (رشته مولکول دارو)</label>
+              <pre id="primary-smiles" class="sequence-box">در حال بارگذاری...</pre>
+            </div>
+            <div class="sequence-block">
+              <label>توالی پروتئین هدف</label>
+              <pre id="primary-protein" class="sequence-box">در حال بارگذاری...</pre>
+              <span id="primary-protein-len" class="seq-meta"></span>
+            </div>
+          </div>
+          <div class="sequence-block screening-target-block">
+            <label>توالی پروتئین غربالگری (ذخیره‌شده در دیتاست)</label>
+            <pre id="screening-target-protein" class="sequence-box compact">—</pre>
+          </div>
+          <h3 class="screening-subtitle">جفت‌های مولکول–پروتئین ذخیره‌شده</h3>
+          <div class="table-wrap">
+            <table class="screening-table molecular-pairs-table">
+              <thead>
+                <tr>
+                  <th>برچسب</th>
+                  <th>SMILES</th>
+                  <th>توالی پروتئین</th>
+                  <th>طول</th>
+                  <th>نمره</th>
+                </tr>
+              </thead>
+              <tbody id="molecular-pairs-body"></tbody>
+            </table>
+          </div>
+          <div id="molecular-catalog-download" class="link-row"></div>
+        </div>
+        <div class="card" id="screening-card">
+          <div class="screening-header">
+            <h2>غربالگری مجازی مولکول‌ها</h2>
+            <span id="screening-hit-rate" class="screening-badge">—</span>
+          </div>
+          <p id="screening-text" class="screening-summary">در حال بارگذاری...</p>
+          <div class="screening-criteria" id="screening-criteria"></div>
+          <div id="screening-distribution" class="screening-distribution"></div>
+          <h3 class="screening-subtitle">جدول رتبه‌بندی</h3>
+          <div class="table-wrap">
+            <table class="screening-table">
+              <thead>
+                <tr>
+                  <th>رتبه</th>
+                  <th>SMILES</th>
+                  <th>توالی پروتئین</th>
+                  <th>نمره</th>
+                  <th>MW</th>
+                  <th>LogP</th>
+                  <th>وضعیت</th>
+                </tr>
+              </thead>
+              <tbody id="screening-body"></tbody>
+            </table>
+          </div>
+          <div id="screening-downloads" class="link-row"></div>
+        </div>
+        <div class="card showcase-banner" id="showcase-banner">
+          <h2>نمونه کامل: ایبوپروفن</h2>
+          <p>هدف: COX-2 (PTGS2) · بافت: غشای سینوویال · دوز: ۴۰۰ میلی‌گرم خوراکی</p>
+          <button id="goto-showcase" class="btn-secondary">مشاهده فرایند کامل →</button>
         </div>
         <div class="card">
           <h2>نمودار نمرات اتصال</h2>
@@ -68,6 +140,23 @@
         <div class="card">
           <h2>آخرین پیش‌بینی</h2>
           <div id="overview-latest">در حال بارگذاری...</div>
+        </div>
+      </section>
+
+      <!-- صفحه: نمونه دارو -->
+      <section class="page" id="page-showcase">
+        <h1 class="page-title">نمونه دارو — فرایند کامل</h1>
+        <div class="card" id="showcase-header">
+          <p class="empty-msg">در حال بارگذاری نمونه...</p>
+        </div>
+        <div class="card">
+          <h2>مراحل خط لوله HQCA</h2>
+          <div id="pipeline-steps" class="pipeline"></div>
+        </div>
+        <div class="card">
+          <h2>نمایش ۳D جیب پروتئینی</h2>
+          <iframe id="showcase-viewer" title="Showcase 3D viewer" class="showcase-viewer"></iframe>
+          <div id="showcase-downloads" class="link-row"></div>
         </div>
       </section>
 
@@ -83,7 +172,7 @@
           <h2>تاریخچه</h2>
           <table id="history-table">
             <thead>
-              <tr><th>SMILES</th><th>نمره</th><th>اطمینان</th><th>تاریخ</th></tr>
+              <tr><th>SMILES</th><th>توالی پروتئین</th><th>نمره</th><th>اطمینان</th><th>تاریخ</th></tr>
             </thead>
             <tbody id="history-body"></tbody>
           </table>

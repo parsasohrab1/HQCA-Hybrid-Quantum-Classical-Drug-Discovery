@@ -259,6 +259,155 @@ button:not(.nav-item):not(.icon-btn):not(.btn-secondary) {
 }
 .empty-msg { color: var(--muted); text-align: center; padding: 2rem; }
 #task-status { margin-top: 0.75rem; font-size: 0.8rem; overflow: auto; }
+
+/* ── Showcase pipeline ── */
+.showcase-banner {
+  background: linear-gradient(135deg, #0c4a6e 0%, var(--card) 60%);
+  border-color: #0ea5e9;
+}
+.showcase-banner h2 { margin-bottom: 0.35rem; }
+.showcase-banner p { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.75rem; }
+.showcase-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.showcase-hero h2 { font-size: 1.25rem; }
+.showcase-hero .muted { color: var(--muted); font-weight: 400; font-size: 0.9rem; }
+.clinical-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin: 0.85rem 0;
+}
+.clinical-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.clinical-item label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.clinical-item strong { font-size: 0.95rem; color: var(--text); }
+.clinical-item span { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+.showcase-scores { display: flex; gap: 1rem; }
+.score-ring {
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  text-align: center;
+  min-width: 90px;
+}
+.score-ring.alt { border-color: #22c55e; }
+.score-ring span { display: block; font-size: 1.75rem; font-weight: 700; color: var(--accent); }
+.score-ring.alt span { color: #22c55e; }
+.score-ring label { font-size: 0.75rem; color: var(--muted); }
+.pipeline { display: flex; flex-direction: column; gap: 0; position: relative; }
+.pipeline-step {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.pipeline-step:last-child { border-bottom: 0; }
+.step-marker {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 2px solid var(--accent);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  position: relative; z-index: 1;
+}
+.step-marker span { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+.step-content header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.step-content h3 { font-size: 0.95rem; }
+.step-status { font-size: 0.75rem; color: #22c55e; }
+.step-dl { display: grid; grid-template-columns: 140px 1fr; gap: 0.25rem 0.75rem; font-size: 0.82rem; }
+.step-dl dt { color: var(--muted); }
+.step-dl dd { margin: 0; }
+.step-dl dd.ok { color: #22c55e; }
+.step-dl dd.score { color: var(--accent); font-weight: 700; font-size: 1rem; }
+.showcase-viewer {
+  width: 100%; height: 420px; border: 0;
+  border-radius: 8px; margin-top: 0.5rem; background: var(--bg);
+}
+code { font-size: 0.78rem; background: var(--bg); padding: 0.15rem 0.35rem; border-radius: 4px; word-break: break-all; }
+
+/* ── Molecular screening ── */
+.screening-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+.screening-badge {
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.screening-summary { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.75rem; line-height: 1.6; }
+.screening-summary .hit { color: #22c55e; }
+.screening-criteria { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.85rem; }
+.criteria-chip {
+  font-size: 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  color: var(--muted);
+}
+.criteria-chip strong { color: var(--text); }
+.screening-distribution { margin-bottom: 1rem; }
+.chart-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem; }
+.screening-subtitle { font-size: 0.95rem; margin: 0.75rem 0 0.5rem; }
+.table-wrap { overflow-x: auto; }
+.screening-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.screening-table th, .screening-table td { padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right; }
+.screening-row.hit { background: rgba(34, 197, 94, 0.06); }
+.screening-row.reject { opacity: 0.85; }
+.score-cell { color: var(--accent); font-weight: 700; }
+.status-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.status-pill.hit { background: #14532d; color: #86efac; }
+.status-pill.reject { background: #450a0a; color: #fca5a5; }
+.dist-row { display: grid; grid-template-columns: 48px 1fr 32px; gap: 0.5rem; align-items: center; margin-bottom: 0.3rem; font-size: 0.78rem; }
+
+/* ── Molecular sequences ── */
+.molecular-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+.molecular-label { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem; }
+.sequence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+@media (max-width: 900px) { .sequence-grid { grid-template-columns: 1fr; } }
+.sequence-block label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 0.35rem; }
+.sequence-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 140px;
+  overflow: auto;
+  margin: 0;
+}
+.sequence-box.compact { max-height: 80px; font-size: 0.7rem; }
+.seq-meta { font-size: 0.72rem; color: var(--muted); margin-top: 0.25rem; display: block; }
+.protein-seq, .protein-inline { font-size: 0.72rem; word-break: break-all; }
+.screening-target-block { margin-bottom: 1rem; }
+
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 

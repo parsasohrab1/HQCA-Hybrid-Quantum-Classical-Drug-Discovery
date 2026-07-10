@@ -33,6 +33,7 @@ function showPage(name) {
   document.getElementById(`page-${name}`)?.classList.add("active");
   document.querySelector(`.nav-item[data-page="${name}"]`)?.classList.add("active");
   if (name === "notifications") loadNotifications();
+  if (name === "showcase") loadShowcase();
 }
 
 function updateNotifBadge(unread) {
@@ -87,10 +88,239 @@ function pushLocalNotif(type, title, message, read = false) {
   if (read) readIds.add(id);
 }
 
+function formatStepData(key, data) {
+  if (!data) return "";
+  if (key === "input") {
+    return `<dl class="step-dl">
+      <dt>پروتئین هدف</dt><dd>${data.target_protein} (${data.target_protein_gene}, UniProt ${data.target_protein_uniprot})</dd>
+      <dt>بافت هدف</dt><dd>${data.tissue}</dd>
+      <dt>اندیکاسیون</dt><dd>${data.tissue_indication}</dd>
+      <dt>دوز مصرف</dt><dd>${data.dose_amount} — ${data.dose_route}</dd>
+      <dt>تکرار</dt><dd>${data.dose_frequency} (حداکثر روزانه ${data.dose_max_daily})</dd>
+      <dt>SMILES</dt><dd><code>${data.smiles}</code></dd>
+      <dt>طول توالی پروتئین</dt><dd>${data.fasta_length} اسید آمینه</dd>
+      <dt>پیش‌نمایش FASTA</dt><dd><code>${data.fasta_preview}</code></dd>
+      <dt>وضعیت</dt><dd class="ok">✓ ${data.status === "valid" ? "معتبر" : data.status}</dd>
+    </dl>`;
+  }
+  if (key === "descriptors") {
+    return `<dl class="step-dl">
+      <dt>MW</dt><dd>${data.MW}</dd>
+      <dt>LogP</dt><dd>${data.LogP}</dd>
+      <dt>HBD / HBA</dt><dd>${data.HBD} / ${data.HBA}</dd>
+      <dt>پیوند چرخان / حلقه آروماتیک</dt><dd>${data.RotatableBonds} / ${data.AromaticRings}</dd>
+      <dt>TPSA</dt><dd>${data.TPSA}</dd>
+    </dl>`;
+  }
+  if (key === "quantum") {
+    return `<dl class="step-dl">
+      <dt>Backend</dt><dd>${data.backend}</dd>
+      <dt>کیوبیت</dt><dd>${data.n_qubits}</dd>
+      <dt>Embedding</dt><dd>${data.embedding}</dd>
+      <dt>مدار</dt><dd>${data.circuit}</dd>
+      <dt>عمق گیت</dt><dd>${data.gate_depth}</dd>
+    </dl>`;
+  }
+  if (key === "simulation") {
+    return `<dl class="step-dl">
+      <dt>الگوریتم</dt><dd>${data.algorithm}</dd>
+      <dt>انرژی اتصال</dt><dd>${data.binding_energy_kcal_mol} kcal/mol</dd>
+      <dt>اندازه‌گیری</dt><dd>${data.measurement}</dd>
+    </dl>`;
+  }
+  if (key === "pockets") {
+    const centers = (data.centers || []).map((c, i) => `جیب ${i + 1}: (${c.x}, ${c.y}, ${c.z})`).join("<br/>");
+    return `<dl class="step-dl">
+      <dt>تعداد جیب</dt><dd>${data.count}</dd>
+      <dt>طول هر جیب</dt><dd>${(data.pocket_lengths || []).join(", ")}</dd>
+      <dt>مراکز</dt><dd>${centers}</dd>
+    </dl>`;
+  }
+  if (key === "prediction") {
+    return `<dl class="step-dl">
+      <dt>نمره اتصال</dt><dd class="score">${data.binding_score} / 100</dd>
+      <dt>انرژی</dt><dd>${Number(data.binding_energy_kcal_mol).toFixed(3)} kcal/mol</dd>
+      <dt>اطمینان</dt><dd>${data.confidence_pct}%</dd>
+      <dt>تفسیر</dt><dd>${data.interpretation}</dd>
+    </dl>`;
+  }
+  if (key === "output") {
+    return `<dl class="step-dl">
+      <dt>نمره نهایی</dt><dd class="score">${data.binding_score} / 100</dd>
+      <dt>اطمینان</dt><dd>${data.confidence_pct}%</dd>
+      <dt>فایل‌ها</dt><dd>PDF، CSV، PDB، HTML ۳D</dd>
+    </dl>`;
+  }
+  return `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+}
+
+function renderShowcase(data) {
+  const drug = data.drug;
+  const res = data.result;
+  const tp = drug.target_protein || {};
+  const ti = drug.tissue || {};
+  const dose = drug.dose || {};
+  document.getElementById("showcase-header").innerHTML = `
+    <div class="showcase-hero">
+      <div>
+        <h2>${drug.name_fa} <span class="muted">(${drug.name_en})</span></h2>
+        <p>${drug.description}</p>
+        <div class="clinical-grid">
+          <div class="clinical-item">
+            <label>پروتئین هدف</label>
+            <strong>${tp.name_fa || "—"}</strong>
+            <span>${tp.name || ""} · ژن ${tp.gene || "—"} · ${tp.uniprot || ""}</span>
+            <span class="muted">${tp.role_fa || ""}</span>
+          </div>
+          <div class="clinical-item">
+            <label>بافت هدف</label>
+            <strong>${ti.name_fa || "—"}</strong>
+            <span>${ti.indication_fa || ""}</span>
+          </div>
+          <div class="clinical-item">
+            <label>دوز مصرف</label>
+            <strong>${dose.amount || "—"} ${dose.unit_fa || dose.unit || "mg"}</strong>
+            <span>${dose.route_fa || ""} — ${dose.frequency_fa || ""}</span>
+            <span class="muted">حداکثر روزانه: ${dose.max_daily_mg || "—"} ${dose.unit_fa || "mg"} · ${dose.note_fa || ""}</span>
+          </div>
+        </div>
+        <p><strong>SMILES:</strong> <code>${drug.smiles}</code></p>
+      </div>
+      <div class="showcase-scores">
+        <div class="score-ring"><span>${res.binding_score}</span><label>نمره اتصال</label></div>
+        <div class="score-ring alt"><span>${res.confidence_pct}%</span><label>اطمینان</label></div>
+      </div>
+    </div>`;
+
+  document.getElementById("pipeline-steps").innerHTML = (data.pipeline || []).map((step) => `
+    <article class="pipeline-step completed">
+      <div class="step-marker">${step.icon}<span>${step.step}</span></div>
+      <div class="step-content">
+        <header><h3>${step.title}</h3><span class="step-status">✓ تکمیل</span></header>
+        ${formatStepData(step.key, step.data)}
+      </div>
+    </article>`).join("");
+
+  const frame = document.getElementById("showcase-viewer");
+  if (res.viewer_html_url) frame.src = apiUrl(res.viewer_html_url);
+  document.getElementById("showcase-downloads").innerHTML = `
+    <a href="${apiUrl(res.report_pdf_url)}" target="_blank">📄 گزارش PDF</a>
+    <a href="${apiUrl(res.report_csv_url)}" target="_blank">📊 CSV</a>
+    <a href="${apiUrl(res.pocket_pdb_url)}" target="_blank">🧬 PDB</a>`;
+}
+
+async function loadShowcase() {
+  const header = document.getElementById("showcase-header");
+  const steps = document.getElementById("pipeline-steps");
+  try {
+    header.innerHTML = "<p class='empty-msg'>در حال اجرای شبیه‌سازی...</p>";
+    steps.innerHTML = "";
+    const data = await api("/demo/showcase");
+    renderShowcase(data);
+  } catch (e) {
+    header.innerHTML = `<p class="empty-msg">خطا: ${e.message}</p>`;
+  }
+}
+
+function renderMolecularData(data) {
+  if (!data?.primary) {
+    document.getElementById("primary-smiles").textContent = "—";
+    document.getElementById("primary-protein").textContent = "—";
+    return;
+  }
+  const p = data.primary;
+  const target = data.screening_target || {};
+  document.getElementById("molecular-primary-label").textContent =
+    `${p.label || "جفت اصلی"} · منبع: ${p.source || "—"}`;
+  document.getElementById("molecular-stored-count").textContent =
+    `${data.stored_count || 0} جفت ذخیره‌شده`;
+  document.getElementById("primary-smiles").textContent = p.smiles || "—";
+  document.getElementById("primary-protein").textContent = p.protein_sequence || "—";
+  document.getElementById("primary-protein-len").textContent =
+    p.protein_length ? `${p.protein_length} اسید آمینه` : "";
+  document.getElementById("screening-target-protein").textContent =
+    target.protein_sequence || "—";
+
+  const pairs = data.pairs || [];
+  document.getElementById("molecular-pairs-body").innerHTML = pairs.map((m) => `
+    <tr class="molecular-pair-row">
+      <td>${m.label || m.id?.slice(0, 10) || "—"}</td>
+      <td><code>${m.smiles}</code></td>
+      <td><code class="protein-seq">${m.protein_preview || m.protein_sequence?.slice(0, 40) || "—"}</code></td>
+      <td>${m.protein_length ?? "—"}</td>
+      <td>${m.binding_score ?? "—"}</td>
+    </tr>`).join("");
+
+  document.getElementById("molecular-catalog-download").innerHTML = data.catalog_url
+    ? `<a href="${apiUrl(data.catalog_url)}" target="_blank">دانلود کاتالوگ JSON</a>`
+    : "";
+}
+
+function renderScreening(screening) {
+  if (!screening?.available) {
+    document.getElementById("screening-text").textContent = screening?.message_fa || "داده غربالگری موجود نیست.";
+    document.getElementById("screening-hit-rate").textContent = "—";
+    document.getElementById("screening-criteria").innerHTML = "";
+    document.getElementById("screening-distribution").innerHTML = "";
+    document.getElementById("screening-body").innerHTML =
+      `<tr><td colspan="7" class="empty-msg">${screening?.message_fa || "—"}</td></tr>`;
+    document.getElementById("screening-downloads").innerHTML = "";
+    document.getElementById("stat-screened").textContent = "0";
+    document.getElementById("stat-hits").textContent = "0";
+    return;
+  }
+
+  const s = screening.summary;
+  document.getElementById("stat-screened").textContent = s.total_screened;
+  document.getElementById("stat-hits").textContent = s.hits;
+  document.getElementById("screening-hit-rate").textContent = `${s.hit_rate_pct}% کاندید`;
+  document.getElementById("screening-text").innerHTML = `
+    <strong>${s.total_screened}</strong> مولکول غربال شد —
+    <strong class="hit">${s.hits}</strong> کاندید برتر ·
+    <strong>${s.rejected}</strong> رد شده ·
+    بهترین نمره: <strong>${s.best_binding_score}</strong> ·
+    میانگین: <strong>${s.avg_binding_score}</strong>`;
+
+  const labels = screening.criteria_labels_fa || {};
+  const crit = screening.criteria || {};
+  document.getElementById("screening-criteria").innerHTML = Object.entries(crit).map(([k, v]) =>
+    `<span class="criteria-chip">${labels[k] || k}: <strong>${v}</strong></span>`
+  ).join("");
+
+  const dist = screening.score_distribution || [];
+  const maxCount = Math.max(...dist.map((d) => d.count), 1);
+  document.getElementById("screening-distribution").innerHTML = `
+    <p class="chart-label">توزیع نمرات اتصال</p>
+    ${dist.map((d) => `
+    <div class="dist-row">
+      <span>${d.range}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(d.count / maxCount) * 100}%"></div></div>
+      <span class="bar-val">${d.count}</span>
+    </div>`).join("")}`;
+
+  const rows = screening.leaderboard || [];
+  document.getElementById("screening-body").innerHTML = rows.map((m) => `
+    <tr class="screening-row ${m.is_hit ? "hit" : "reject"}">
+      <td>${m.rank}</td>
+      <td><code>${m.smiles_preview || m.smiles}</code></td>
+      <td><code class="protein-seq">${m.protein_preview || m.protein_sequence?.slice(0, 36) || "—"}</code></td>
+      <td class="score-cell">${m.binding_score}</td>
+      <td>${m.MW}</td>
+      <td>${m.LogP}</td>
+      <td><span class="status-pill ${m.is_hit ? "hit" : "reject"}">${m.status_fa}</span></td>
+    </tr>`).join("");
+
+  document.getElementById("screening-downloads").innerHTML = screening.source_csv
+    ? `<a href="${apiUrl(screening.source_csv)}" target="_blank">دانلود CSV دیتاست</a>`
+    : "";
+}
+
 function showPrediction(item) {
   if (!item) return;
   const html = `
-    <strong>SMILES:</strong> ${item.smiles_preview || item.smiles || "—"}<br/>
+    <strong>SMILES:</strong> <code>${item.smiles || item.smiles_preview || "—"}</code><br/>
+    <strong>توالی پروتئین:</strong> <code class="protein-inline">${item.protein_sequence || item.protein_preview || "—"}</code><br/>
+    <strong>طول توالی:</strong> ${item.protein_length || (item.protein_sequence?.length ?? "—")} اسید آمینه<br/>
     <strong>نمره:</strong> ${item.binding_score} / 100<br/>
     <strong>انرژی:</strong> ${Number(item.binding_energy_kcal_mol ?? 0).toFixed(3)} kcal/mol<br/>
     <strong>اطمینان:</strong> ${item.confidence}%<br/>
@@ -121,8 +351,11 @@ function renderHistory(predictions) {
   const tbody = document.getElementById("history-body");
   tbody.innerHTML = (predictions || []).map((p) => `
     <tr data-id="${p.request_id}" class="history-row">
-      <td>${p.smiles_preview}</td><td>${p.binding_score}</td>
-      <td>${p.confidence}%</td><td>${(p.created_at || "").slice(0, 16)}</td>
+      <td><code>${p.smiles_preview || p.smiles}</code></td>
+      <td><code class="protein-seq">${p.protein_preview || p.protein_sequence?.slice(0, 28) || "—"}</code></td>
+      <td>${p.binding_score}</td>
+      <td>${p.confidence}%</td>
+      <td>${(p.created_at || "").slice(0, 16)}</td>
     </tr>`).join("");
   tbody.querySelectorAll(".history-row").forEach((row) => {
     row.onclick = async () => {
@@ -205,9 +438,10 @@ async function loadNotifications() {
 async function loadDashboard() {
   const data = await api("/dashboard");
   document.getElementById("stat-predictions").textContent = data.stats.total_predictions;
-  document.getElementById("stat-datasets").textContent = data.stats.total_synthetic_jobs;
   document.getElementById("stat-avg-score").textContent = data.stats.avg_binding_score;
   if (data.latest_prediction) showPrediction(data.latest_prediction);
+  renderMolecularData(data.molecular_data);
+  renderScreening(data.molecular_screening);
   renderChart(data.predictions);
   renderHistory(data.predictions);
   renderDataset(data.synthetic_datasets);
@@ -242,6 +476,7 @@ document.getElementById("sidebar-toggle").onclick = () => document.getElementByI
 document.getElementById("login-btn").onclick = async () => { await ensureConnection(); await autoLogin(); };
 document.getElementById("save-auth-btn")?.addEventListener("click", async () => { await ensureConnection(); await autoLogin(); });
 
+document.getElementById("goto-showcase")?.addEventListener("click", () => showPage("showcase"));
 document.getElementById("predict-btn").onclick = async () => {
   const body = { smiles: document.getElementById("smiles").value, fasta: document.getElementById("fasta").value, backend: document.getElementById("backend").value };
   const data = await api("/predict", { method: "POST", body: JSON.stringify(body) });
@@ -268,7 +503,7 @@ document.getElementById("generate-btn").onclick = async () => {
 
 document.getElementById("global-search")?.addEventListener("input", (e) => {
   const q = e.target.value.toLowerCase();
-  document.querySelectorAll(".history-row").forEach((row) => {
+  document.querySelectorAll(".history-row, .screening-row, .molecular-pair-row").forEach((row) => {
     row.style.display = row.textContent.toLowerCase().includes(q) ? "" : "none";
   });
 });
@@ -276,6 +511,10 @@ document.getElementById("global-search")?.addEventListener("input", (e) => {
 async function bootstrap() {
   await ensureConnection();
   await autoLogin();
+  if (!localStorage.getItem("hqca_showcase_seen")) {
+    localStorage.setItem("hqca_showcase_seen", "1");
+    showPage("showcase");
+  }
 }
 
 bootstrap().catch((e) => {

@@ -6,12 +6,15 @@ import json
 import os
 import uuid
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 from sqlalchemy.orm import Session
 
 from data import SyntheticDataPipeline, predict_binding
 from database import PredictionResult, ProcessingTask, User, utc_now
+from molecular_catalog import SCREENING_TARGET_FASTA, encrypt_protein_sequence, refresh_molecular_catalog
+from showcase import SHOWCASE_DRUG, build_showcase_payload
 from logging_config import LOGGER
 from reporting import generate_pdf_report
 from security import encrypt_sensitive, hash_password
@@ -59,8 +62,9 @@ def _save_prediction(
     smiles: str,
     fasta: str,
     output_root: Path,
+    request_id: Optional[str] = None,
 ) -> PredictionResult:
-    request_id = uuid.uuid4().hex
+    request_id = request_id or uuid.uuid4().hex
     out_dir = output_root / request_id
     result = predict_binding(smiles, fasta=fasta, output_dir=str(out_dir), backend="auto")
 
@@ -80,6 +84,7 @@ def _save_prediction(
         user_id=user_id,
         encrypted_smiles=encrypt_sensitive(smiles),
         encrypted_fasta=encrypt_sensitive(fasta),
+        encrypted_protein_sequence=encrypt_protein_sequence(result.protein_sequence),
         binding_score=result.binding_score,
         binding_energy_kcal_mol=result.binding_energy_kcal_mol,
         confidence=result.confidence_pct,
@@ -113,7 +118,7 @@ def _seed_synthetic_task(db: Session, user_id: int, num_samples: int = 50) -> Pr
         output_csv=str(csv_path),
         output_json=str(json_path),
         output_pdf=str(pdf_path),
-        fasta="ACDEFGHIKLMNPQRSTVWY",
+        fasta=SCREENING_TARGET_FASTA,
     )
 
     csv_url = object_storage.put_file(str(csv_path), f"seed/{task_id}/dataset.csv")
@@ -148,6 +153,61 @@ def _seed_synthetic_task(db: Session, user_id: int, num_samples: int = 50) -> Pr
     return task
 
 
+def _seed_showcase_prediction(db: Session, user_id: int, output_root: Path) -> Optional[PredictionResult]:
+    """Fixed-ID showcase drug with full pipeline artifacts."""
+    request_id = SHOWCASE_DRUG["id"]
+    if db.get(PredictionResult, request_id):
+        return db.get(PredictionResult, request_id)
+
+    smiles = SHOWCASE_DRUG["smiles"]
+    fasta = SHOWCASE_DRUG["fasta"]
+    out_dir = output_root / request_id
+    result = predict_binding(smiles, fasta=fasta, output_dir=str(out_dir), backend="auto", num_pockets=5)
+
+    csv_path = out_dir / "prediction.csv"
+    pd.DataFrame([result.to_dict()]).to_csv(csv_path, index=False)
+    pdf_path = out_dir / "report.pdf"
+    generate_pdf_report(result.to_dict(), str(pdf_path))
+
+    csv_url = object_storage.put_file(str(csv_path), f"predictions/{request_id}/prediction.csv")
+    pdf_url = object_storage.put_file(str(pdf_path), f"predictions/{request_id}/report.pdf")
+    pdb_url = object_storage.put_file(result.pdb_path, f"predictions/{request_id}/pocket.pdb")
+    viewer_url = object_storage.put_file(result.viewer_html_path, f"predictions/{request_id}/viewer.html")
+
+    center = result.pocket.get("center", (0, 0, 0))
+    record = PredictionResult(
+        request_id=request_id,
+        user_id=user_id,
+        encrypted_smiles=encrypt_sensitive(smiles),
+        encrypted_fasta=encrypt_sensitive(fasta),
+        encrypted_protein_sequence=encrypt_protein_sequence(result.protein_sequence),
+        binding_score=result.binding_score,
+        binding_energy_kcal_mol=result.binding_energy_kcal_mol,
+        confidence=result.confidence_pct,
+        pocket_center_json=json.dumps({"x": center[0], "y": center[1], "z": center[2]}),
+        report_csv_object=csv_url,
+        report_pdf_object=pdf_url,
+        pocket_pdb_object=pdb_url,
+        viewer_html_object=viewer_url,
+        backend=result.backend,
+    )
+    db.add(record)
+    db.flush()
+    build_showcase_payload(
+        result,
+        smiles=smiles,
+        fasta=fasta,
+        urls={
+            "viewer_html_url": viewer_url,
+            "report_pdf_url": pdf_url,
+            "report_csv_url": csv_url,
+            "pocket_pdb_url": pdb_url,
+        },
+    )
+    LOGGER.info("Showcase drug seeded", extra={"hqca_event": "seed_showcase", "hqca_request_id": request_id})
+    return record
+
+
 def ensure_admin(db: Session) -> User:
     admin = db.query(User).filter(User.username == "admin").first()
     if admin:
@@ -178,8 +238,11 @@ def seed_demo_data(db: Session, force: bool = False) -> dict:
             _save_prediction(db, admin.id, item["smiles"], item["fasta"], output_root)
         db.commit()
 
+    _seed_showcase_prediction(db, admin.id, output_root)
     task = _seed_synthetic_task(db, admin.id, num_samples=50)
     db.commit()
+
+    catalog = refresh_molecular_catalog(db)
 
     predictions = (
         db.query(PredictionResult)
@@ -194,6 +257,7 @@ def seed_demo_data(db: Session, force: bool = False) -> dict:
         "dataset_task_id": task.task_id,
         "dataset_records": task.records_generated,
         "dataset_status": task.status,
+        "molecular_catalog": catalog,
     }
 
 

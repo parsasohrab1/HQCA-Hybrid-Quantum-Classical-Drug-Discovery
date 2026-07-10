@@ -63,6 +63,7 @@ class PredictionResult(Base):
     created_at: Mapped[str] = mapped_column(String(32), default=utc_now)
     encrypted_smiles: Mapped[str] = mapped_column(Text)
     encrypted_fasta: Mapped[str] = mapped_column(Text)
+    encrypted_protein_sequence: Mapped[str] = mapped_column(Text, default="")
     binding_score: Mapped[float] = mapped_column(Float)
     binding_energy_kcal_mol: Mapped[float] = mapped_column(Float)
     confidence: Mapped[float] = mapped_column(Float)
@@ -97,6 +98,25 @@ class ProcessingTask(Base):
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    _migrate_schema()
+
+
+def _migrate_schema() -> None:
+    """Add columns for existing SQLite/PostgreSQL databases."""
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    if not insp.has_table("prediction_results"):
+        return
+    cols = {c["name"] for c in insp.get_columns("prediction_results")}
+    if "encrypted_protein_sequence" not in cols:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    'ALTER TABLE prediction_results '
+                    'ADD COLUMN encrypted_protein_sequence TEXT DEFAULT ""'
+                )
+            )
 
 
 def get_db():
