@@ -24,10 +24,16 @@ SCREENING_TARGET_FASTA = (
 
 def protein_from_row(row: PredictionResult) -> str:
     if getattr(row, "encrypted_protein_sequence", None):
-        stored = decrypt_sensitive(row.encrypted_protein_sequence)
-        if stored:
-            return stored
-    fasta_raw = decrypt_sensitive(row.encrypted_fasta)
+        try:
+            stored = decrypt_sensitive(row.encrypted_protein_sequence)
+            if stored:
+                return stored
+        except ValueError:
+            pass
+    try:
+        fasta_raw = decrypt_sensitive(row.encrypted_fasta)
+    except ValueError:
+        return ""
     try:
         return normalize_fasta(fasta_raw) if fasta_raw else ""
     except ValueError:
@@ -35,8 +41,11 @@ def protein_from_row(row: PredictionResult) -> str:
 
 
 def pair_from_prediction(row: PredictionResult, label: Optional[str] = None) -> Dict[str, Any]:
-    smiles = decrypt_sensitive(row.encrypted_smiles)
-    fasta = decrypt_sensitive(row.encrypted_fasta)
+    try:
+        smiles = decrypt_sensitive(row.encrypted_smiles)
+        fasta = decrypt_sensitive(row.encrypted_fasta)
+    except ValueError:
+        smiles, fasta = "", ""
     protein = protein_from_row(row)
     return {
         "id": row.request_id,
@@ -89,7 +98,9 @@ def refresh_molecular_catalog(db: Session) -> Dict[str, Any]:
     """Rebuild catalog from DB predictions + showcase reference."""
     for row in db.query(PredictionResult).all():
         if not row.encrypted_protein_sequence:
-            row.encrypted_protein_sequence = encrypt_protein_sequence(protein_from_row(row))
+            protein = protein_from_row(row)
+            if protein:
+                row.encrypted_protein_sequence = encrypt_protein_sequence(protein)
     db.flush()
 
     entries: List[Dict[str, Any]] = [showcase_pair()]

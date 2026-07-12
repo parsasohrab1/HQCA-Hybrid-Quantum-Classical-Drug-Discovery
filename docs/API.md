@@ -12,7 +12,16 @@
 - `POST /predict`
   - Body: `{ "smiles": "CCO", "fasta": ">t\nACDEF...", "backend": "auto" }`
   - Backends: `auto`, `pennylane_default_qubit`, `qiskit_aer_simulator`, `classical_fallback`
-  - Response: binding score 0–100, confidence, PDB/CSV/PDF/3D viewer URLs
+  - Response: `smiles`, `fasta`, `protein_sequence`, binding score 0–100, confidence, PDB/CSV/PDF/3D viewer URLs
+
+## Dashboard
+- `GET /dashboard` — stats, latest prediction, screening, `molecular_data` (SMILES + protein pairs)
+- `GET /dashboard/screening` — virtual screening leaderboard from latest dataset
+- `GET /dashboard/molecules` — stored molecular catalog (SMILES + protein sequences)
+- `GET /dashboard/datasets` — completed synthetic jobs
+
+## Demo showcase
+- `GET /demo/showcase` — full HQCA pipeline for sample drug (Ibuprofen / COX-2), 7 steps + artifact URLs
 
 ## Synthetic data (FR-04, FR-05, FR-06)
 - `POST /generate_synthetic` — `{ "num_samples": 500, "smiles_seed": ["CCO"] }`

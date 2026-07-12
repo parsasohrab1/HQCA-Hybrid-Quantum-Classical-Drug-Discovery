@@ -10,15 +10,12 @@
 
 ```powershell
 pip install -r requirements.txt
-$env:HQCA_USE_MINIO = "false"
-$env:HQCA_DATABASE_URL = "sqlite:///output/hqca.db"
-python run_api.py          # ترمینال ۱ — API
-cd frontend; python -m http.server 5173 --bind 127.0.0.1   # ترمینال ۲ — UI
+python run_dashboard.py
 ```
 
 | سرویس | آدرس |
 |--------|------|
-| **Dashboard (UI)** | http://127.0.0.1:5173 |
+| **Dashboard (UI + API)** | http://127.0.0.1:18080/ |
 | **API Swagger** | http://127.0.0.1:18080/docs |
 | **Health check** | http://127.0.0.1:18080/health |
 
@@ -26,13 +23,26 @@ cd frontend; python -m http.server 5173 --bind 127.0.0.1   # ترمینال ۲ �
 
 > پورت پیش‌فرض API روی Windows: `18080` (قابل تغییر با `HQCA_PORT`)
 
+### صفحات داشبورد
+| صفحه | محتوا |
+|------|--------|
+| نمونه دارو | فرایند کامل ایبوپروفن → COX-2 (۷ مرحله + ۳D) |
+| داشبورد | غربالگری مجازی، SMILES و توالی پروتئین، نمودار نمرات |
+| نتایج و ۳D | تاریخچه پیش‌بینی‌ها و viewer |
+| پیش‌بینی جدید | شبیه‌سازی SMILES + FASTA |
+| تولید داده | دیتاست سنتتیک (۱–۵۰۰۰ نمونه) |
+
 ## ساختار پروژه
 
 ```
 api.py              FastAPI + RBAC + Swagger
 data.py             هسته کوانتومی (VQC, VQE, COBYLA)
 database.py         PostgreSQL / SQLite
-frontend/           داشبورد وب
+showcase.py         نمونه دارو end-to-end
+screening.py        غربالگری مجازی مولکول
+molecular_catalog.py  کاتالوگ SMILES + توالی پروتئین
+frontend/           داشبورد وب (سرو از API)
+run_dashboard.py    اجرای یک‌مرحله‌ای API + مرورگر
 docker-compose.yml  PostgreSQL + MinIO + nginx
 tests/              تست یکپارچه API
 evaluation.py       معیارهای پذیرش AC-01 .. AC-05
