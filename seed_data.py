@@ -24,27 +24,27 @@ DEMO_PREDICTIONS = [
     {
         "smiles": "CCO",
         "fasta": "ACDEFGHIKLMNPQRSTVWY",
-        "label": "اتانول",
+        "label": "Ethanol",
     },
     {
         "smiles": "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",
         "fasta": "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQAPILSRVGDGTQDNLSGAEKAVQVKVKALPDAQFEVVHSLAKWKRQTLGQHDFSAGEGLYTHMKALRPDEDRLSPLHSVYVDQWDWERVMGDGERQFSTLKSTVEAIWAGIKATEAAVSEEFGLAPFLPDQIHFVHSQELLSRYPDLDAKGRERAIAKDLGAVFLVGIGGKLSDGHRHDVRAPDYDDWSTPSELGHRAQLTKL",
-        "label": "ایبوپروفن",
+        "label": "Ibuprofen",
     },
     {
         "smiles": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
         "fasta": "ACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWY",
-        "label": "کافئین",
+        "label": "Caffeine",
     },
     {
         "smiles": "CC(C)(C)NC(=O)C1=CC=CC=C1C(=O)NC2=CC=C(C=C2)C(F)(F)F",
         "fasta": "GLYVALALALEUPHEMETTRPTYR",
-        "label": "آتورواستاتین",
+        "label": "Atorvastatin",
     },
     {
         "smiles": "CN1CCN(CC1)C2=CC=C(C=C2)C3=NC4=CC=CC=C4S3",
         "fasta": "ACDEFGHIKLMNPQRSTVWY",
-        "label": "کوتیرون",
+        "label": "Quetiapine",
     },
 ]
 

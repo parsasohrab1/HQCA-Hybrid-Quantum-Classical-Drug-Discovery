@@ -19,11 +19,11 @@ SCREENING_CRITERIA = {
 }
 
 CRITERIA_LABELS_FA = {
-    "binding_score_min": "حداقل نمره اتصال",
-    "MW_max": "حداکثر وزن مولکولی (Da)",
-    "LogP_max": "حداکثر LogP",
-    "HBD_max": "حداکثر دهنده H",
-    "HBA_max": "حداکثر پذیرنده H",
+    "binding_score_min": "Minimum binding score",
+    "MW_max": "Maximum molecular weight (Da)",
+    "LogP_max": "Maximum LogP",
+    "HBD_max": "Maximum H-bond donors",
+    "HBA_max": "Maximum H-bond acceptors",
 }
 
 
@@ -78,7 +78,7 @@ def _molecule_row(row: pd.Series, rank: int) -> Dict[str, Any]:
         "HBA": int(row["HBA"]),
         "TPSA": round(float(row.get("TPSA", 0)), 2),
         "is_hit": bool(row.get("is_hit", False)),
-        "status_fa": "کاندید برتر" if row.get("is_hit") else "رد شده",
+        "status_fa": "Top candidate" if row.get("is_hit") else "Rejected",
     }
 
 
@@ -121,7 +121,7 @@ def screening_from_csv_url(csv_url: Optional[str], top_n: int = 15) -> Dict[str,
     """Build screening payload from a dataset CSV URL."""
     empty = {
         "available": False,
-        "message_fa": "دیتاست غربالگری موجود نیست. از بخش «تولید داده» یک مجموعه بسازید.",
+        "message_fa": "The screening dataset is not available. Create a dataset from the 'Data generation' section.",
         "criteria": SCREENING_CRITERIA,
         "criteria_labels_fa": CRITERIA_LABELS_FA,
         "summary": {
@@ -142,7 +142,7 @@ def screening_from_csv_url(csv_url: Optional[str], top_n: int = 15) -> Dict[str,
 
     df = load_dataset_csv(csv_url)
     if df is None or len(df) == 0:
-        return {**empty, "message_fa": "فایل دیتاست یافت نشد یا ناقص است."}
+        return {**empty, "message_fa": "Dataset file not found or incomplete."}
 
     result = run_screening(df, top_n=top_n)
     result["available"] = True

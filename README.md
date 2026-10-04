@@ -1,54 +1,54 @@
 # HQCA — Hybrid Quantum-Classical Drug Discovery
 
-**نسخه MVP:** 1.1 | **وضعیت:** قابل اجرا (API + Dashboard + DB)
+**MVP version:** 1.1 | **Status:** Runnable (API + Dashboard + DB)
 
-سامانه شبیه‌ساز ترکیبی کوآنتوم-کلاسیک برای پیش‌بینی اتصال مولکول‌های دارویی به پروتئین هدف.
+A hybrid quantum-classical simulator system for predicting the binding of drug molecules to a target protein.
 
 ---
 
-## اجرای سریع (Live Dashboard)
+## Quick Run (Live Dashboard)
 
 ```powershell
 pip install -r requirements.txt
 python run_dashboard.py
 ```
 
-| سرویس | آدرس |
+| Service | Address |
 |--------|------|
 | **Dashboard (UI + API)** | http://127.0.0.1:18080/ |
 | **API Swagger** | http://127.0.0.1:18080/docs |
 | **Health check** | http://127.0.0.1:18080/health |
 
-**ورود پیش‌فرض:** `admin` / `admin12345`
+**Default login:** `admin` / `admin12345`
 
-> پورت پیش‌فرض API روی Windows: `18080` (قابل تغییر با `HQCA_PORT`)
+> Default API port on Windows: `18080` (changeable with `HQCA_PORT`)
 
-### صفحات داشبورد
-| صفحه | محتوا |
+### Dashboard Pages
+| Page | Content |
 |------|--------|
-| نمونه دارو | فرایند کامل ایبوپروفن → COX-2 (۷ مرحله + ۳D) |
-| داشبورد | غربالگری مجازی، SMILES و توالی پروتئین، نمودار نمرات |
-| نتایج و ۳D | تاریخچه پیش‌بینی‌ها و viewer |
-| پیش‌بینی جدید | شبیه‌سازی SMILES + FASTA |
-| تولید داده | دیتاست سنتتیک (۱–۵۰۰۰ نمونه) |
+| Drug example | Complete ibuprofen → COX-2 process (7 steps + 3D) |
+| Dashboard | Virtual screening, SMILES and protein sequence, score chart |
+| Results and 3D | Prediction history and viewer |
+| New prediction | SMILES + FASTA simulation |
+| Data generation | Synthetic dataset (1–5000 samples) |
 
-## ساختار پروژه
+## Project Structure
 
 ```
 api.py              FastAPI + RBAC + Swagger
-data.py             هسته کوانتومی (VQC, VQE, COBYLA)
+data.py             quantum core (VQC, VQE, COBYLA)
 database.py         PostgreSQL / SQLite
-showcase.py         نمونه دارو end-to-end
-screening.py        غربالگری مجازی مولکول
-molecular_catalog.py  کاتالوگ SMILES + توالی پروتئین
-frontend/           داشبورد وب (سرو از API)
-run_dashboard.py    اجرای یک‌مرحله‌ای API + مرورگر
+showcase.py         end-to-end drug example
+screening.py        virtual molecule screening
+molecular_catalog.py  SMILES + protein sequence catalog
+frontend/           web dashboard (served from the API)
+run_dashboard.py    one-step API + browser launch
 docker-compose.yml  PostgreSQL + MinIO + nginx
-tests/              تست یکپارچه API
-evaluation.py       معیارهای پذیرش AC-01 .. AC-05
+tests/              API integration tests
+evaluation.py       acceptance criteria AC-01 .. AC-05
 ```
 
-## تست و استقرار
+## Testing and Deployment
 
 ```powershell
 python -m pytest tests/ -q
@@ -56,223 +56,223 @@ python evaluation.py
 docker compose up --build
 ```
 
-مستندات: [docs/INSTALLATION.md](docs/INSTALLATION.md) | [docs/API.md](docs/API.md)
+Documentation: [docs/INSTALLATION.md](docs/INSTALLATION.md) | [docs/API.md](docs/API.md)
 
 ---
 
-در ادامه، سند **SRS (Software Requirements Specification)** کامل برای محصول «سامانه شبیه‌ساز ترکیبی کوآنتوم-کلاسیک برای طراحی و بهینه‌سازی مولکول‌های دارویی» تهیه شده است. این سند بر اساس استاندارد IEEE 830 و با توجه به نیازهای ثبت اختراع و تجاری‌سازی در ایران تدوین شده است.
+Below, a complete **SRS (Software Requirements Specification)** has been prepared for the product "Hybrid Quantum-Classical Simulator System for Designing and Optimizing Drug Molecules". This document is written based on the IEEE 830 standard, taking into account patent filing and commercialization needs in Iran.
 
 ---
 
-# سند الزامات نرم‌افزاری (SRS)
-## سامانه شبیه‌ساز ترکیبی کوآنتوم-کلاسیک (HQCA)
-**نسخه:** 1.1  
-**تاریخ:** ۱۴۰۵/۰۳/۱۹ (SRS) — MVP: ۱۴۰۵/۰۴/۰۸
-**محصول:** HQCA (Hybrid Quantum-Classical Assistant for Drug Discovery)
+# Software Requirements Specification (SRS)
+## Hybrid Quantum-Classical Simulator System (HQCA)
+**Version:** 1.1
+**Date:** 1405/03/19 (SRS) — MVP: 1405/04/08
+**Product:** HQCA (Hybrid Quantum-Classical Assistant for Drug Discovery)
 
 ---
 
-## ۱. مقدمه
+## 1. Introduction
 
-### ۱.۱ هدف
-این سند الزامات عملکردی و غیرعملکردی سامانه **HQCA** را تعریف می‌کند؛ سامانه‌ای که با ترکیب محاسبات کوآنتومی و یادگیری ماشین کلاسیک، پیش‌بینی میزان اتصال مولکول‌های دارویی به پروتئین‌های هدف را با دقت بالا و هزینه محاسباتی بهینه انجام می‌دهد.
+### 1.1 Purpose
+This document defines the functional and non-functional requirements of the **HQCA** system, a system that, by combining quantum computing and classical machine learning, predicts the binding of drug molecules to target proteins with high accuracy and optimized computational cost.
 
-### ۱.۲ دامنه
-سامانه قادر است:
-- دریافت رشته SMILES مولکول دارو و توالی پروتئین هدف
-- تولید داده‌های سنتتیک در صورت کمبود داده واقعی
-- شبیه‌سازی انرژی آزاد اتصال با استفاده از الگوریتم VQE روی شبیه‌ساز کوآنتومی یا سخت‌افزار واقعی
-- خروجی: نمره اتصال (Binding Affinity) در محدوده ۰ تا ۱۰۰ و احتمال موفقیت
+### 1.2 Scope
+The system is able to:
+- Receive the drug molecule SMILES string and the target protein sequence
+- Generate synthetic data when real data is scarce
+- Simulate binding free energy using the VQE algorithm on a quantum simulator or real hardware
+- Output: binding score (Binding Affinity) in the range 0 to 100 and success probability
 
-### ۱.۳ تعاریف و اختصارات
-| عبارت | تعریف |
+### 1.3 Definitions and Acronyms
+| Term | Definition |
 |-------|-------|
-| QML | یادگیری ماشین کوانتومی |
+| QML | Quantum machine learning |
 | VQE | Variational Quantum Eigensolver |
-| HQCA | سامانه ترکیبی پیشنهادی |
-| SMILES | نمایش رشته‌ای ساختار مولکولی |
-| PDB | پایگاه داده ساختار پروتئین |
-| Angle Embedding | نگاشت داده به زوایای چرخش کیوبیت |
+| HQCA | The proposed hybrid system |
+| SMILES | String representation of molecular structure |
+| PDB | Protein structure database |
+| Angle Embedding | Mapping data to qubit rotation angles |
 
-### ۱.۴ مراجع
-- استاندارد IEEE 830-1998
-- قوانین ثبت اختراع ایران (مصوب ۱۳۸۶ و اصلاحات)
-- مقالات مرجع: PocketGen (2025)، ChemBFN (2025)، Q-BAFNet (2025)
+### 1.4 References
+- IEEE 830-1998 standard
+- Iranian patent law (approved 1386 and amendments)
+- Reference papers: PocketGen (2025), ChemBFN (2025), Q-BAFNet (2025)
 
 ---
 
-## ۲. شرح کلی
+## 2. Overall Description
 
-### ۲.۱ چشم‌انداز محصول
-HQCA یک سامانه نرم‌افزاری به صورت SaaS (نرم‌افزار به عنوان خدمت) است که به شرکت‌های داروسازی، دانشگاه‌ها و مراکز تحقیقاتی امکان می‌دهد فرآیند غربالگری مجازی مولکول‌ها را با سرعت ۲۰ برابر روش‌های کلاسیک و دقت بالای ۸۵٪ انجام دهند.
+### 2.1 Product Vision
+HQCA is a software system delivered as SaaS (Software as a Service) that enables pharmaceutical companies, universities and research centers to perform virtual molecule screening at 20 times the speed of classical methods and with accuracy above 85%.
 
-### ۲.۲ ویژگی‌های اصلی
-| شماره | ویژگی |
+### 2.2 Key Features
+| No. | Feature |
 |-------|-------|
-| F1 | تولید داده‌های سنتتیک جیب پروتئین و مولکول دارو |
-| F2 | محاسبه توصیفگرهای کلاسیک (MW، LogP، HBA، HBD و ...) |
-| F3 | Encoding کوانتومی با Angle Embedding |
-| F4 | مدار کوانتومی وردشی (VQC) با الگوی درهم‌تنیدگی درخت دودویی |
-| F5 | بهینه‌ساز کلاسیک COBYLA |
-| F6 | پیش‌بینی نمره اتصال و نمایش گرافیکی جیب اتصال |
-| F7 | ذخیره و بازیابی نتایج (پایگاه داده) |
-| F8 | گزارش‌گیری جهت ثبت اختراع و مستندات آزمایشگاهی |
+| F1 | Generation of synthetic protein pocket and drug molecule data |
+| F2 | Calculation of classical descriptors (MW, LogP, HBA, HBD, etc.) |
+| F3 | Quantum encoding with Angle Embedding |
+| F4 | Variational quantum circuit (VQC) with a binary-tree entanglement pattern |
+| F5 | Classical COBYLA optimizer |
+| F6 | Binding score prediction and graphical display of the binding pocket |
+| F7 | Storing and retrieving results (database) |
+| F8 | Reporting for patent filing and laboratory documentation |
 
-### ۲.۳ کاربران
-| نقش | توضیح |
+### 2.3 Users
+| Role | Description |
 |------|-------|
-| محقق داروسازی | وارد کردن مولکول و پروتئین، دریافت پیش‌بینی |
-| مدیر سامانه | نصب، پیکربندی، نظارت بر پردازش‌های کوانتومی |
-| توسعه‌دهنده QML | تنظیم پارامترهای مدار وردشی و بهینه‌ساز |
+| Pharmaceutical researcher | Enter molecule and protein, receive prediction |
+| System administrator | Install, configure, monitor quantum processing |
+| QML developer | Tune the variational circuit and optimizer parameters |
 
-### ۲.۴ محدودیت‌ها
-- نبود سخت‌افزار کوآنتومی فیزیکی در ایران → در فاز اول، شبیه‌سازهای کلاسیک (Qiskit Aer، PennyLane) جایگزین می‌شوند.
-- حداکثر ۳۰ کیوبیت شبیه‌سازی در ماشین‌های با ۶۴ گیگابایت رم.
-- زمان پاسخگویی برای هر جفت دارو-پروتئین حداکثر ۵ دقیقه (در حالت شبیه‌ساز).
-
----
-
-## ۳. نیازمندی‌های عملکردی (Functional Requirements)
-
-### ۳.۱ ماژول ورود و اعتبارسنجی داده
-| شناسه | نیازمندی |
-|-------|----------|
-| FR-01 | سامانه باید قادر به دریافت رشته SMILES مولکول دارو (حداکثر ۲۰۰ کاراکتر) باشد. |
-| FR-02 | سامانه باید قادر به دریافت توالی پروتئین در قالب رشته اسید آمینه (فرمت FASTA) باشد. |
-| FR-03 | سامانه باید اعتبار SMILES را با استفاده از کتابخانه RDKit بررسی کرده و خطای ورودی نامعتبر را گزارش دهد. |
-
-### ۳.۲ ماژول تولید داده سنتتیک
-| شناسه | نیازمندی |
-|-------|----------|
-| FR-04 | در صورت فعال بودن حالت «سنتتیک»، سامانه با استفاده از مدل PocketGen (یا پیاده‌سازی معادل) به ازای هر دارو، ۵ جیب پروتئینی متنوع تولید کند. |
-| FR-05 | سامانه با استفاده از مدل ChemBFN (یا RNN+RL) حداقل ۱۰۰۰ مولکول داروی جدید مشابه ساختاری ورودی اصلی تولید کند. |
-| FR-06 | سامانه قابلیت تعیین تعداد نمونه سنتتیک (مثلاً ۵۰۰، ۱۰۰۰، ۵۰۰۰) را از طریق رابط کاربری فراهم کند. |
-
-### ۳.۳ ماژول محاسبه توصیفگرها
-| شناسه | نیازمندی |
-|-------|----------|
-| FR-07 | برای هر مولکول SMILES، ۷ توصیفگر زیر محاسبه شود: MW، LogP، HBD، HBA، Rotatable Bonds، Aromatic Rings، TPSA. |
-| FR-08 | توصیفگرها نرمالیزه شده (مقیاس ۰ تا ۱) به ماژول کوآنتومی ارسال شوند. |
-
-### ۳.۴ ماژول Encoding کوآنتومی (Angle Embedding)
-| شناسه | نیازمندی |
-|-------|----------|
-| FR-09 | هر توصیفگر با فرمول θ_i = arctan(normalized_value_i) به زاویه چرخش یک کیوبیت تبدیل شود. |
-| FR-10 | تعداد کیوبیت‌ها برابر ۷ (تعداد توصیفگرها) باشد. |
-
-### ۳.۵ ماژول مدار کوآنتومی وردشی (VQC)
-| شناسه | نیازمندی |
-|-------|----------|
-| FR-11 | مدار شامل سه لایه متوالی باشد: لایه دروازه‌های RX تک‌کیوبیتی با پارامترهای قابل یادگیری، لایه درهم‌تنیدگی درخت دودویی (CNOT بین کیوبیت i و i+1 و سپس i و i+2)، لایه چرخش RY وابسته به داده (داده‌های ورودی دوباره اعمال شوند). |
-| FR-12 | عمق مدار (تعداد گیت‌های دنباله‌دار) حداکثر ۲۰ گیت باشد تا با شبیه‌سازهای موجود اجرا شود. |
-| FR-13 | سامانه قابلیت انتخاب بک‌اند (backend) را داشته باشد: `qiskit_aer_simulator` (پیش‌فرض)، `braket_local` یا `quantum_device` (اختیاری). |
-
-### ۳.۶ ماژول اندازه‌گیری و بهینه‌سازی
-| شناسه | نیازمندی |
-|-------|----------|
-| FR-14 | پس از اجرای مدار، اندازه‌گیری در پایه Z انجام شده و مقدار انتظاری ⟨Z⟩ به عنوان خام خروجی گرفته شود. |
-| FR-15 | تابع هزینه = ∥⟨Z⟩_predicted − BindingAffinity_true∥ (برای آموزش) یا خروجی نهایی برای پیش‌بینی. |
-| FR-16 | بهینه‌ساز COBYLA با حداکثر ۲۰۰ تکرار، پارامترهای وردشی را به روز کند. |
-
-### ۳.۷ ماژول پیش‌بینی و خروجی
-| شناسه | نیازمندی |
-|-------|----------|
-| FR-17 | سامانه خروجی نهایی را به صورت عددی (نمره اتصال از ۰ تا ۱۰۰) نمایش دهد. |
-| FR-18 | همراه با خروجی، یک سطح اطمینان (مثلاً ۹۲٪) و ناحیه جیب اتصال پیشنهادی (با نمایش سه‌بعدی تعاملی) ارائه شود. |
-| FR-19 | امکان ذخیره خروجی در قالب PDF (گزارش ثبت اختراع) و CSV (داده خام) وجود داشته باشد. |
+### 2.4 Constraints
+- No physical quantum hardware in Iran → in the first phase, classical simulators (Qiskit Aer, PennyLane) are used instead.
+- A maximum of 30 simulated qubits on machines with 64 GB of RAM.
+- Response time for each drug-protein pair of at most 5 minutes (in simulator mode).
 
 ---
 
-## ۴. نیازمندی‌های غیرعملکردی (Non-Functional Requirements)
+## 3. Functional Requirements
 
-### ۴.۱ کارایی
-| شناسه | نیازمندی |
+### 3.1 Data Input and Validation Module
+| ID | Requirement |
 |-------|----------|
-| NFR-01 | زمان متوسط پیش‌بینی برای هر جفت دارو-پروتئین حداکثر ۵ دقیقه (روی سرور با ۱۶ هسته، ۶۴GB RAM). |
-| NFR-02 | پشتیبانی همزمان از حداقل ۵ درخواست کاربر بدون افت محسوس سرعت. |
+| FR-01 | The system must be able to receive the drug molecule SMILES string (maximum 200 characters). |
+| FR-02 | The system must be able to receive the protein sequence as an amino acid string (FASTA format). |
+| FR-03 | The system must validate the SMILES using the RDKit library and report an error for invalid input. |
 
-### ۴.۲ قابلیت دسترسی
-| شناسه | نیازمندی |
+### 3.2 Synthetic Data Generation Module
+| ID | Requirement |
 |-------|----------|
-| NFR-03 | سامانه باید از طریق مرورگر وب (مدرن: Chrome، Firefox، Edge) قابل دسترسی باشد. |
-| NFR-04 | در دسترس بودن سامانه ۹۹٪ در ساعات کاری (۸ صبح تا ۸ شب، به جز زمان نگهداری هفتگی ۲ ساعته). |
+| FR-04 | When "synthetic" mode is enabled, the system must generate 5 diverse protein pockets per drug using the PocketGen model (or an equivalent implementation). |
+| FR-05 | The system must generate at least 1000 new drug molecules structurally similar to the original input using the ChemBFN model (or RNN+RL). |
+| FR-06 | The system must provide the ability to specify the number of synthetic samples (e.g., 500, 1000, 5000) through the user interface. |
 
-### ۴.۳ امنیت
-| شناسه | نیازمندی |
+### 3.3 Descriptor Calculation Module
+| ID | Requirement |
 |-------|----------|
-| NFR-05 | داده‌های ورودی (SMILES، توالی پروتئین) در پایگاه داده رمزگذاری شوند (AES-256). |
-| NFR-06 | دسترسی مبتنی بر نقش (RBAC): کاربران عادی فقط نتایج خود را ببینند؛ مدیران به لاگ سیستم و تنظیمات دسترسی داشته باشند. |
+| FR-07 | For each SMILES molecule, the following 7 descriptors must be calculated: MW, LogP, HBD, HBA, Rotatable Bonds, Aromatic Rings, TPSA. |
+| FR-08 | The descriptors must be normalized (scale 0 to 1) and sent to the quantum module. |
 
-### ۴.۴ قابلیت نگهداری و پشتیبانی
-| شناسه | نیازمندی |
+### 3.4 Quantum Encoding Module (Angle Embedding)
+| ID | Requirement |
 |-------|----------|
-| NFR-07 | سامانه باید دارای API مستند (Swagger/OpenAPI) برای یکپارچه‌سازی با سایر سیستم‌ها باشد. |
-| NFR-08 | لاگ‌های خطا به صورت متمرکز ذخیره شوند (فرمت JSON). |
+| FR-09 | Each descriptor must be converted to a qubit rotation angle with the formula θ_i = arctan(normalized_value_i). |
+| FR-10 | The number of qubits must be 7 (the number of descriptors). |
+
+### 3.5 Variational Quantum Circuit (VQC) Module
+| ID | Requirement |
+|-------|----------|
+| FR-11 | The circuit must consist of three consecutive layers: a layer of single-qubit RX gates with learnable parameters, a binary-tree entanglement layer (CNOT between qubit i and i+1 and then i and i+2), and a data-dependent RY rotation layer (the input data is applied again) |
+| FR-12 | The circuit depth (number of sequential gates) must be at most 20 gates so that it runs on existing simulators. |
+| FR-13 | The system must support backend selection: `qiskit_aer_simulator` (default), `braket_local` or `quantum_device` (optional). |
+
+### 3.6 Measurement and Optimization Module
+| ID | Requirement |
+|-------|----------|
+| FR-14 | After running the circuit, measurement is performed in the Z basis and the expectation value ⟨Z⟩ is taken as the raw output. |
+| FR-15 | Cost function = ∥⟨Z⟩_predicted − BindingAffinity_true∥ (for training) or the final output for prediction. |
+| FR-16 | The COBYLA optimizer with a maximum of 200 iterations updates the variational parameters. |
+
+### 3.7 Prediction and Output Module
+| ID | Requirement |
+|-------|----------|
+| FR-17 | The system must display the final output numerically (binding score from 0 to 100). |
+| FR-18 | Along with the output, a confidence level (e.g., 92%) and the suggested binding pocket region (with interactive 3D display) must be provided. |
+| FR-19 | It must be possible to save the output in PDF (patent report) and CSV (raw data) formats. |
 
 ---
 
-## ۵. معماری سیستم (خلاصه)
+## 4. Non-Functional Requirements
 
-![معماری پیشنهادی](تصویر فرضی – در مستند واقعی دیاگرام قرار می‌گیرد)
+### 4.1 Performance
+| ID | Requirement |
+|-------|----------|
+| NFR-01 | Average prediction time for each drug-protein pair of at most 5 minutes (on a server with 16 cores, 64 GB RAM). |
+| NFR-02 | Simultaneous support of at least 5 user requests without noticeable slowdown. |
 
-لایه‌ها:
-1. **لایه نمایش (Frontend)** – React.js
-2. **لایه API** – FastAPI (Python)
-3. **لایه منطق کسب و کار**:
-   - تولید داده سنتتیک (PocketGen, ChemBFN)
-   - محاسبه توصیفگرها (RDKit)
-   - Orchestrator کوآنتومی (مدیریت اجرای VQC روی شبیه‌ساز)
-4. **لایه ذخیره‌سازی** – PostgreSQL (داده کاربران، نتایج) + MinIO (فایل‌های PDB سه‌بعدی)
+### 4.2 Availability
+| ID | Requirement |
+|-------|----------|
+| NFR-03 | The system must be accessible via a web browser (modern: Chrome, Firefox, Edge). |
+| NFR-04 | System availability of 99% during working hours (8 AM to 8 PM, except for a 2-hour weekly maintenance window). |
+
+### 4.3 Security
+| ID | Requirement |
+|-------|----------|
+| NFR-05 | Input data (SMILES, protein sequence) must be encrypted in the database (AES-256). |
+| NFR-06 | Role-based access (RBAC): regular users see only their own results; administrators have access to the system log and access settings. |
+
+### 4.4 Maintainability and Support
+| ID | Requirement |
+|-------|----------|
+| NFR-07 | The system must have documented API (Swagger/OpenAPI) for integration with other systems. |
+| NFR-08 | Error logs must be stored centrally (JSON format). |
 
 ---
 
-## ۶. الزامات داده (Data Requirements)
+## 5. System Architecture (Summary)
 
-### ۶.۱ داده‌های اولیه آموزشی (برای نمونه اولیه)
-| مجموعه داده | تعداد تخمینی | روش تولید |
+![Proposed architecture](Hypothetical image – a diagram would be placed here in the actual document)
+
+Layers:
+1. **Presentation layer (Frontend)** – React.js
+2. **API layer** – FastAPI (Python)
+3. **Business logic layer**:
+   - Synthetic data generation (PocketGen, ChemBFN)
+   - Descriptor calculation (RDKit)
+   - Quantum orchestrator (managing VQC execution on the simulator)
+4. **Storage layer** – PostgreSQL (user data, results) + MinIO (3D PDB files)
+
+---
+
+## 6. Data Requirements
+
+### 6.1 Initial Training Data (for the prototype)
+| Dataset | Estimated count | Generation method |
 |-------------|--------------|------------|
-| جفت دارو-پروتئین | ۱۰,۰۰۰ | ترکیبی از داده‌های واقعی عمومی (BindingDB subset) + سنتتیک با PocketGen |
-| برچسب انرژی اتصال | ۱,۰۰۰ | محاسبه با VQE روی شبیه‌ساز ۸ کیوبیتی |
-| توصیفگرهای مولکولی | ۴۰,۰۰۰ (پیش‌آموزش) | محاسبه از SMILES سنتتیک ChemBFN |
+| Drug-protein pairs | 10,000 | Combination of public real data (BindingDB subset) + synthetic with PocketGen |
+| Binding energy labels | 1,000 | Computed with VQE on an 8-qubit simulator |
+| Molecular descriptors | 40,000 (pre-training) | Computed from ChemBFN synthetic SMILES |
 
-### ۶.۲ حجم ذخیره‌سازی تخمینی
-- هر جفت ذخیره‌شده با ساختار PDB (فشرده): ~۵۰ مگابایت × ۱۰,۰۰۰ = ۵۰۰ گیگابایت
-- پایگاه داده ابرداده‌ها: ~۱۰ گیگابایت
+### 6.2 Estimated Storage Volume
+- Each stored pair with PDB structure (compressed): ~50 MB × 10,000 = 500 GB
+- Metadata database: ~10 GB
 
 ---
 
-## ۷. رابط‌های خارجی
+## 7. External Interfaces
 
-### ۷.۱ رابط کاربر (UI)
-- صفحه اصلی: فیلد ورود SMILES و FASTA، دکمه «شبیه‌سازی»
-- صفحه نتایج: نمودار میلهای نمره اتصال، نمایشگر سه‌بعدی جیب (Three.js)
-- صفحه مدیریت: تنظیم پارامترهای مدار وردشی (تعداد لایه‌ها، تعداد تکرارها، انتخاب شبیه‌ساز)
+### 7.1 User Interface (UI)
+- Main page: SMILES and FASTA entry fields, "Simulate" button
+- Results page: binding score bar chart, 3D pocket viewer (Three.js)
+- Management page: tuning variational circuit parameters (number of layers, number of iterations, simulator selection)
 
-### ۷.۲ رابط برنامه‌نویسی (API)
-- `POST /predict` → ورودی JSON (smiles, fasta) → خروجی {binding_score, confidence, pocket_pdb_url}
+### 7.2 Application Programming Interface (API)
+- `POST /predict` → JSON input (smiles, fasta) → output {binding_score, confidence, pocket_pdb_url}
 - `POST /generate_synthetic` → {num_samples, smiles_seed} → {task_id}
 - `GET /status/{task_id}`
 
-### ۷.۳ رابط سخت‌افزاری (اختیاری)
-- در صورت اتصال به سخت‌افزار کوآنتومی واقعی (IBM Q، D-Wave)، سامانه باید از طریق Qiskit Runtime API ارتباط برقرار کند.
+### 7.3 Hardware Interface (optional)
+- When connected to real quantum hardware (IBM Q, D-Wave), the system must communicate through the Qiskit Runtime API.
 
 ---
 
-## ۸. معیارهای پذیرش (برای تحویل)
+## 8. Acceptance Criteria (for delivery)
 
-| شماره | معیار |
+| No. | Criterion |
 |-------|-------|
-| AC-01 | سامانه قادر است برای ۱۰۰ جفت دارو-پروتئین که قبلاً در پایگاه داده‌های عمومی (PDBbind) نتایجشان مشخص است، پیش‌بینی با خطای میانگین مطلق (MAE) کمتر از ۱.۲ (کیلوکالری بر مول) ارائه دهد. |
-| AC-02 | زمان متوسط پاسخگویی برای ۸۰٪ درخواست‌ها زیر ۴ دقیقه باشد. |
-| AC-03 | تمام الزامات عملکردی (FR-01 تا FR-19) در تست‌های یکپارچه‌سازی پاس شوند. |
-| AC-04 | مستندات API و راهنمای کاربر کامل ارائه شده باشد. |
-| AC-05 | سامانه به صورت موفق بر روی یک سرور ابری (مثلاً زیرساخت ایران‌سرور یا ابر داخلی) مستقر شود و ۷ روز بدون خطای بحرانی کار کند. |
+| AC-01 | For 100 drug-protein pairs whose results are already known in public databases (PDBbind), the system can provide predictions with a mean absolute error (MAE) of less than 1.2 (kcal/mol). |
+| AC-02 | The average response time for 80% of requests must be under 4 minutes. |
+| AC-03 | All functional requirements (FR-01 to FR-19) must pass in integration tests. |
+| AC-04 | API documentation and a complete user guide must be provided. |
+| AC-05 | The system must be successfully deployed on a cloud server (e.g., Iran Server infrastructure or a domestic cloud) and run for 7 days without critical errors. |
 
 ---
 
-## ۹. پیوست‌ها (پیشنهادی)
+## 9. Appendices (suggested)
 
-### پیوست A – نمونه شبه‌کد ماژول VQC
+### Appendix A – Sample VQC Module Pseudocode
 ```python
 from qiskit import QuantumCircuit
 import numpy as np
@@ -300,7 +300,7 @@ def variational_circuit(features, params):
     return qc
 ```
 
-### پیوست B – نمونه فرمت خروجی JSON
+### Appendix B – Sample JSON Output Format
 ```json
 {
   "status": "success",
@@ -316,13 +316,13 @@ def variational_circuit(features, params):
 
 ---
 
-## ۱۰. تاریخچه تغییرات
+## 10. Revision History
 
-| نسخه | تاریخ | نویسنده | تغییرات |
+| Version | Date | Author | Changes |
 |------|-------|---------|----------|
-| 0.1 | ۱۴۰۵/۰۳/۱۰ | تیم تحلیل | پیش‌نویس اولیه |
-| 1.0 | ۱۴۰۵/۰۳/۱۹ | تیم فنی | نهایی برای ثبت اختراع |
-| 1.1 | ۱۴۰۵/۰۴/۰۸ | تیم فنی | MVP: FastAPI، Dashboard، DB، COBYLA، PDF/3D |
+| 0.1 | 1405/03/10 | Analysis team | Initial draft |
+| 1.0 | 1405/03/19 | Technical team | Final for patent filing |
+| 1.1 | 1405/04/08 | Technical team | MVP: FastAPI, Dashboard, DB, COBYLA, PDF/3D |
 
 ---
 

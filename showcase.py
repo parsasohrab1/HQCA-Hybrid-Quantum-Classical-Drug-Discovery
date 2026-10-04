@@ -19,7 +19,7 @@ from validation import normalize_fasta, validate_smiles
 
 SHOWCASE_DRUG = {
     "id": "showcase-ibuprofen",
-    "name_fa": "ایبوپروفن",
+    "name_fa": "Ibuprofen",
     "name_en": "Ibuprofen",
     "smiles": "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",
     "fasta": (
@@ -27,27 +27,27 @@ SHOWCASE_DRUG = {
         "MLARALLLCAVLALSARASPGPRTQCEQAREQFFINDVELAAYMTLARLARPGPLTHAASAVDITEVE"
         "CHLPPGPLDMITDVLNRKGFVFTLTVHDGECVETITVEYSSLRSLRPSLFGGLLQASVGQETLNVT"
     ),
-    "description": "NSAID — نمونه کامل فرایند HQCA از ورود تا گزارش نهایی",
+    "description": "NSAID — complete HQCA process example from input to final report",
     "target_protein": {
         "name": "COX-2",
-        "name_fa": "سیکلواکسیژناز-۲",
+        "name_fa": "Cyclooxygenase-2",
         "gene": "PTGS2",
         "uniprot": "P35354",
-        "role_fa": "مهار سنتز پروستاگلاندین‌های التهابی (PGE₂)",
+        "role_fa": "Inhibition of inflammatory prostaglandin (PGE₂) synthesis",
     },
     "tissue": {
-        "name_fa": "غشای سینوویال مفصل و بافت همبند التهابی",
+        "name_fa": "Synovial membrane of the joint and inflamed connective tissue",
         "name_en": "Inflamed synovial membrane / connective tissue",
-        "indication_fa": "التهاب مفصلی، آرتریت روماتوئید، استئوآرتریت، درد عضلانی-اسکلتی",
+        "indication_fa": "Joint inflammation, rheumatoid arthritis, osteoarthritis, musculoskeletal pain",
     },
     "dose": {
         "amount": 400,
         "unit": "mg",
-        "unit_fa": "میلی‌گرم",
-        "route_fa": "خوراکی (قرص)",
-        "frequency_fa": "هر ۶ تا ۸ ساعت",
+        "unit_fa": "milligram",
+        "route_fa": "Oral (tablet)",
+        "frequency_fa": "Every 6 to 8 hours",
         "max_daily_mg": 1200,
-        "note_fa": "دوز معمول بدون نسخه برای درد و التهاب خفیف تا متوسط",
+        "note_fa": "Usual over-the-counter dose for mild to moderate pain and inflammation",
     },
 }
 
@@ -68,7 +68,7 @@ def drug_public_metadata() -> Dict[str, Any]:
         "target_protein": tp,
         "tissue": ti,
         "dose": dose,
-        "target_protein_label": f"{tp['name_fa']} ({tp['name']}) — ژن {tp['gene']}",
+        "target_protein_label": f"{tp['name_fa']} ({tp['name']}) — gene {tp['gene']}",
         "tissue_label": ti["name_fa"],
         "dose_label": f"{dose['amount']} {dose['unit_fa']} {dose['route_fa']} — {dose['frequency_fa']}",
     }
@@ -101,13 +101,13 @@ def _input_clinical_fields() -> Dict[str, Any]:
 
 
 PIPELINE_STEPS = [
-    {"step": 1, "key": "input", "title": "ورود و اعتبارسنجی", "icon": "📥"},
-    {"step": 2, "key": "descriptors", "title": "توصیفگرهای مولکولی", "icon": "🧪"},
-    {"step": 3, "key": "quantum", "title": "Encoding کوانتومی + VQC", "icon": "⚛"},
-    {"step": 4, "key": "simulation", "title": "شبیه‌سازی اتصال (VQE)", "icon": "🔬"},
-    {"step": 5, "key": "pockets", "title": "تولید جیب پروتئینی", "icon": "🧬"},
-    {"step": 6, "key": "prediction", "title": "پیش‌بینی نمره اتصال", "icon": "📊"},
-    {"step": 7, "key": "output", "title": "گزارش و نمایش ۳D", "icon": "📄"},
+    {"step": 1, "key": "input", "title": "Input and validation", "icon": "📥"},
+    {"step": 2, "key": "descriptors", "title": "Molecular descriptors", "icon": "🧪"},
+    {"step": 3, "key": "quantum", "title": "Quantum encoding + VQC", "icon": "⚛"},
+    {"step": 4, "key": "simulation", "title": "Binding simulation (VQE)", "icon": "🔬"},
+    {"step": 5, "key": "pockets", "title": "Protein pocket generation", "icon": "🧬"},
+    {"step": 6, "key": "prediction", "title": "Binding score prediction", "icon": "📊"},
+    {"step": 7, "key": "output", "title": "Report and 3D display", "icon": "📄"},
 ]
 
 def _steps_detail(
@@ -161,7 +161,7 @@ def _steps_detail(
         "binding_score": result.binding_score,
         "binding_energy_kcal_mol": result.binding_energy_kcal_mol,
         "confidence_pct": result.confidence_pct,
-        "interpretation": "اتصال متوسط تا خوب" if result.binding_score >= 45 else "اتصال ضعیف",
+        "interpretation": "Moderate to good binding" if result.binding_score >= 45 else "Weak binding",
     }
     step_output = {
         "viewer_html": result.viewer_html_path,

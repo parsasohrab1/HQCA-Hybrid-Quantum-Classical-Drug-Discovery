@@ -34,7 +34,7 @@ def test_demo_showcase(client):
     res = client.get("/demo/showcase", headers=_auth_headers(client))
     assert res.status_code == 200
     body = res.json()
-    assert body["drug"]["name_fa"] == "ایبوپروفن"
+    assert body["drug"]["name_fa"] == "Ibuprofen"
     assert len(body["pipeline"]) == 7
     assert body["drug"]["target_protein"]["gene"] == "PTGS2"
 

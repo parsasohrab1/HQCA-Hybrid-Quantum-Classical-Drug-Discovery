@@ -23,11 +23,11 @@ def generate_text_report(df: pd.DataFrame, output_file: str = "data_report.txt")
     path = Path(output_file)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
-        f.write("گزارش تولید داده سنتتیک برای سامانه HQCA\n")
+        f.write("Synthetic data generation report for the HQCA system\n")
         f.write("========================================\n")
-        f.write(f"تاریخ تولید: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(f"تعداد نمونه‌ها: {len(df)}\n\n")
-        f.write("محدوده توصیفگرها:\n")
+        f.write(f"Generation date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"Number of samples: {len(df)}\n\n")
+        f.write("Descriptor ranges:\n")
         cols = [
             "MW", "LogP", "HBD", "HBA", "RotatableBonds",
             "AromaticRings", "TPSA", "binding_energy_kcal_mol", "binding_score",
@@ -39,7 +39,7 @@ def generate_text_report(df: pd.DataFrame, output_file: str = "data_report.txt")
                     f"mean={df[col].mean():.2f}\n"
                 )
         if "binding_energy_kcal_mol" in df.columns:
-            f.write("\nتوزیع انرژی اتصال:\n")
+            f.write("\nBinding energy distribution:\n")
             f.write(df["binding_energy_kcal_mol"].value_counts(bins=10).to_string())
     return str(path)
 

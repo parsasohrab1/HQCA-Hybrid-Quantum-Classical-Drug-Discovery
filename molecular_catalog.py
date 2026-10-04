@@ -147,7 +147,7 @@ def dashboard_molecular_data(db: Session, latest: Optional[PredictionResult]) ->
     primary = showcase_pair()
 
     if latest is not None:
-        primary = pair_from_prediction(latest, label="آخرین پیش‌بینی")
+        primary = pair_from_prediction(latest, label="Latest prediction")
     elif showcase_row := db.get(PredictionResult, SHOWCASE_DRUG["id"]):
         primary = pair_from_prediction(showcase_row, label=SHOWCASE_DRUG["name_fa"])
 

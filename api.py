@@ -566,8 +566,8 @@ def list_notifications(
         notifications.append({
             "id": f"pred-{p.request_id}",
             "type": "prediction",
-            "title": f"پیش‌بینی اتصال: نمره {p.binding_score}",
-            "message": f"SMILES: {decrypt_sensitive(p.encrypted_smiles)[:40]} — اطمینان {p.confidence}%",
+            "title": f"Binding prediction: score {p.binding_score}",
+            "message": f"SMILES: {decrypt_sensitive(p.encrypted_smiles)[:40]} — confidence {p.confidence}%",
             "created_at": p.created_at,
             "read": False,
             "link": f"/predictions/{p.request_id}",
@@ -575,16 +575,16 @@ def list_notifications(
         })
     for t in task_query.order_by(ProcessingTask.updated_at.desc()).limit(20).all():
         status_fa = {
-            "completed": "تکمیل شد",
-            "failed": "خطا",
-            "running": "در حال اجرا",
-            "pending": "در صف",
+            "completed": "Completed",
+            "failed": "Failed",
+            "running": "Running",
+            "pending": "Queued",
         }.get(t.status, t.status)
         notifications.append({
             "id": f"task-{t.task_id}",
             "type": "error" if t.status == "failed" else "dataset",
-            "title": f"تولید داده: {status_fa}",
-            "message": f"{t.records_generated}/{t.num_samples} نمونه — task {t.task_id[:12]}",
+            "title": f"Data generation: {status_fa}",
+            "message": f"{t.records_generated}/{t.num_samples} samples — task {t.task_id[:12]}",
             "created_at": t.updated_at,
             "read": t.status in ("completed", "failed"),
             "link": f"/status/{t.task_id}",

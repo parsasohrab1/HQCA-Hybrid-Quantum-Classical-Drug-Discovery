@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ماژول HQCA: تولید داده سنتتیک، مدار VQC، پیش‌بینی و گزارش
-نسخه: 3.0
+HQCA module: synthetic data generation, VQC circuit, prediction and report
+Version: 3.0
 """
 
 import json
@@ -37,7 +37,7 @@ try:
     RDKIT_AVAILABLE = True
 except ImportError:
     RDKIT_AVAILABLE = False
-    raise ImportError("لطفاً RDKit را نصب کنید: pip install rdkit")
+    raise ImportError("Please install RDKit: pip install rdkit")
 
 try:
     import pennylane as qml
@@ -73,12 +73,12 @@ DEFAULT_OUTPUT_DIR = Path(os.getenv("HQCA_OUTPUT_DIR", "output"))
 
 
 # ---------------------------------------------------------------------------
-# F1 — تولید مولکول سنتتیک (ChemBFN-compatible RDKit pipeline)
+# F1 — Synthetic molecule generation (ChemBFN-compatible RDKit pipeline)
 # ---------------------------------------------------------------------------
 class SyntheticMoleculeGenerator:
     """
-    تولید مولکول با جهش ساختاری RDKit (BRICS، جایگزینی اتم، اسکافولد)
-    به‌عنوان جایگزین ChemBFN برای ثبت اختراع و آموزش QML.
+    Generate molecules with RDKit structural mutation (BRICS, atom substitution, scaffold)
+    as a substitute for ChemBFN for patent filing and QML training.
     """
 
     REPLACEMENTS = [
@@ -94,7 +94,7 @@ class SyntheticMoleculeGenerator:
             Chem.MolToSmiles(m) for m in self.valid_mols if m is not None
         ]
         if not self.valid_smiles:
-            raise ValueError("هیچ SMILES معتبری در بذر اولیه وجود ندارد.")
+            raise ValueError("No valid SMILES in the initial seed.")
         self._brics_fragments = self._collect_brics_fragments()
 
     def _collect_brics_fragments(self) -> List[str]:
@@ -187,7 +187,7 @@ class SyntheticMoleculeGenerator:
 
 
 # ---------------------------------------------------------------------------
-# F1 — تولید جیب پروتئینی (PocketGen-compatible، ۵ جیب به‌ازای دارو — FR-04)
+# F1 — Protein pocket generation (PocketGen-compatible, 5 pockets per drug — FR-04)
 # ---------------------------------------------------------------------------
 class SyntheticPocketGenerator:
     AMINO_ACIDS = [
@@ -264,7 +264,7 @@ class SyntheticPocketGenerator:
     def generate_pockets(
         self, sequence: Optional[str] = None, count: int = 5, length: int = 40
     ) -> List[Dict]:
-        """FR-04: تولید ۵ جیب متنوع به‌ازای هر دارو."""
+        """FR-04: Generate 5 diverse pockets per drug."""
         return [
             self.generate_pocket(sequence=sequence, length=length, variant=i)
             for i in range(count)
@@ -272,7 +272,7 @@ class SyntheticPocketGenerator:
 
 
 # ---------------------------------------------------------------------------
-# توصیفگرهای مولکولی
+# Molecular descriptors
 # ---------------------------------------------------------------------------
 @dataclass
 class MolecularDescriptors:
@@ -294,7 +294,7 @@ class MolecularDescriptors:
     def compute(smiles: str) -> "MolecularDescriptors":
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
-            raise ValueError(f"SMILES نامعتبر: {smiles}")
+            raise ValueError(f"Invalid SMILES: {smiles}")
         return MolecularDescriptors(
             MW=Descriptors.MolWt(mol),
             LogP=Descriptors.MolLogP(mol),
@@ -323,7 +323,7 @@ def normalize_descriptors(desc_array: np.ndarray) -> np.ndarray:
 
 
 # ---------------------------------------------------------------------------
-# F4 — مدار VQC منطبق FR-11 با کنترل عمق و انتخاب backend (FR-12, FR-13)
+# F4 — VQC circuit compliant with FR-11 with depth control and backend selection (FR-12, FR-13)
 # ---------------------------------------------------------------------------
 def count_fr11_gates(n_qubits: int) -> int:
     """RX(n) + CNOT adjacent(n-1) + CNOT skip(n-2) + RY(n)."""
@@ -331,7 +331,7 @@ def count_fr11_gates(n_qubits: int) -> int:
 
 
 def apply_fr11_layer(params: np.ndarray, features: np.ndarray, n_qubits: int) -> int:
-    """سه لایه متوالی FR-11؛ تعداد گیت‌های اعمال‌شده را برمی‌گرداند."""
+    """Three consecutive layers of FR-11; returns the number of gates applied."""
     gates = 0
     for i in range(n_qubits):
         qml.RX(params[i], wires=i)
@@ -349,7 +349,7 @@ def apply_fr11_layer(params: np.ndarray, features: np.ndarray, n_qubits: int) ->
 
 
 class QuantumVQESimulator:
-    """VQE با مدار FR-11، COBYLA (FR-16) و انتخاب backend (FR-13)."""
+    """VQE with the FR-11 circuit, COBYLA (FR-16) and backend selection (FR-13)."""
 
     def __init__(
         self,
@@ -445,7 +445,7 @@ class QuantumVQESimulator:
     def predict_affinity(
         self, features_normalized: np.ndarray, optimize: bool = False
     ) -> Tuple[float, int]:
-        """خروجی: (انرژی kcal/mol, عمق مدار)."""
+        """Output: (energy kcal/mol, circuit depth)."""
         if not self.use_quantum:
             return self._classical_predict(features_normalized), 0
 
@@ -460,7 +460,7 @@ class QuantumVQESimulator:
 
 
 # ---------------------------------------------------------------------------
-# F6 — پیش‌بینی کامل با نمره، اطمینان و خروجی ۳D
+# F6 — Full prediction with score, confidence and 3D output
 # ---------------------------------------------------------------------------
 @dataclass
 class PredictionResult:
@@ -498,10 +498,10 @@ def predict_binding(
     backend: BackendName = "auto",
     num_pockets: int = 5,
 ) -> PredictionResult:
-    """پیش‌بینی یک جفت دارو-پروتئین با خروجی ۳D و نمره ۰–۱۰۰."""
+    """Predict a drug-protein pair with 3D output and a score of 0–100."""
     mol = Chem.MolFromSmiles(smiles.strip())
     if mol is None:
-        raise ValueError(f"SMILES نامعتبر: {smiles}")
+        raise ValueError(f"Invalid SMILES: {smiles}")
 
     out = Path(output_dir or DEFAULT_OUTPUT_DIR)
     out.mkdir(parents=True, exist_ok=True)
@@ -541,7 +541,7 @@ def predict_binding(
 
 
 # ---------------------------------------------------------------------------
-# خط لوله تولید داده
+# Data generation pipeline
 # ---------------------------------------------------------------------------
 class SyntheticDataPipeline:
     def __init__(self, seed_smiles: List[str], random_state: int = 42):
@@ -629,7 +629,7 @@ class SyntheticDataPipeline:
 
 
 def generate_report(df: pd.DataFrame, output_file: str = "data_report.txt") -> str:
-    """سازگاری با نسخه قبل — گزارش متنی + PDF."""
+    """Backward compatibility — text report + PDF."""
     txt = generate_text_report(df, output_file)
     pdf = str(Path(output_file).with_suffix(".pdf"))
     if len(df) > 0:

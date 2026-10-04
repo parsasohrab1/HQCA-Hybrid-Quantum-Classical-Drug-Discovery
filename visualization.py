@@ -66,9 +66,9 @@ def generate_pocket_viewer_html(
 </head>
 <body>
   <div id="info">
-    <div>نمره اتصال: <span class="score">{binding_score:.1f}</span> / 100</div>
-    <div>اطمینان: {confidence_pct:.1f}%</div>
-    <div style="margin-top:8px;font-size:12px;opacity:.8">ماوس: چرخش | اسکرول: زوم</div>
+    <div>Binding score: <span class="score">{binding_score:.1f}</span> / 100</div>
+    <div>Confidence: {confidence_pct:.1f}%</div>
+    <div style="margin-top:8px;font-size:12px;opacity:.8">Mouse: rotate | Scroll: zoom</div>
   </div>
   <div id="canvas-wrap"></div>
   <script type="importmap">
